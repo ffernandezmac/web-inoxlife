@@ -1,73 +1,67 @@
 :root {
-  /* Paleta Propuesta 1: Ingeniería Arquitectónica Clara + Banda Industrial Nivel 3 */
-  --bg: #ffffff;
-  --bg-soft: #f6f7f9;
-  --bg-elevated: #eceff4;
-  --bg-glass: rgba(255, 255, 255, 0.84);
+  /* Paleta Diseño 2: Taller de Autor & Escala Monumental (Ferrari / Bugatti) */
+  --bg: #141416;
+  --bg-elevated: #1c1c1f;
+  --bg-card: #222226;
+  --bg-glass: rgba(20, 20, 22, 0.84);
 
-  /* Atmósfera industrial oscura (Nivel 3 Scrollytelling) */
-  --bg-dark: #141a21;
-  --bg-dark-soft: #1b232d;
-  --bg-dark-card: #212b37;
+  /* Contraste blanco de cierre (conversión limpia sin dudas) */
+  --light-bg: #ffffff;
+  --light-soft: #f5f5f7;
+  --light-ink: #141416;
+  --light-body: #383a42;
+  --light-muted: #666a75;
+  --light-hairline: #e2e4ea;
 
-  /* Tinta y jerarquía de texto */
-  --ink: #18191b;
-  --ink-body: #393d45;
-  --ink-muted: #666c78;
-  --ink-faint: #b6bcc8;
+  /* Tinta sobre oscuro */
+  --ink: #ffffff;
+  --ink-body: #d0d3dc;
+  --ink-muted: #9398a6;
+  --ink-faint: #464a54;
 
-  --ink-on-dark: #f7f8fa;
-  --ink-body-dark: #c9d0dc;
-  --ink-muted-dark: #8e98a8;
-
-  /* Acento único de acción (Azul acero corporativo) */
-  --accent: #1c69d4;
-  --accent-hover: #1553aa;
-  --accent-soft: rgba(28, 105, 212, 0.09);
-  --accent-cyan: #38bdf8;
+  /* Acentos contenidos (acero pulido / hielo técnico / azul corporativo solo en bloque claro) */
+  --metal-shine: #e2e8f0;
+  --cad-cyan: #7dd3fc;
+  --accent-light: #1c69d4;
+  --accent-light-hover: #1453aa;
 
   /* Estados semánticos */
-  --danger: #c92a2a;
+  --danger: #d93025;
   --danger-bg: #fff5f5;
-  --success: #1b7f4b;
+  --success: #18794e;
   --success-bg: #eefbf3;
 
   /* Líneas y bordes */
-  --hairline: #e3e6ec;
-  --hairline-strong: #c5cbd6;
-  --hairline-dark: #2a3543;
-  --input-border: #727782;
+  --hairline: #2a2a2f;
+  --hairline-strong: #3b3b42;
+  --input-border: #707580;
 
-  /* Tipografía */
+  /* Tipografía arquitectónica */
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
-  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
 
-  /* Escala tipográfica fluida (390px -> 1440px) */
-  --t-h1: clamp(2.35rem, 4.1vw + 0.9rem, 4.35rem);
-  --t-h2: clamp(1.85rem, 2.7vw + 0.7rem, 3rem);
-  --t-h3: clamp(1.2rem, 1.1vw + 0.85rem, 1.5rem);
-  --t-statement: clamp(1.55rem, 2.4vw + 0.65rem, 2.55rem);
+  /* Escala fluida (390px -> 1440px) */
+  --t-h1: clamp(2.5rem, 4.5vw + 1rem, 4.75rem);
+  --t-h2: clamp(1.9rem, 2.8vw + 0.7rem, 3.25rem);
+  --t-h3: clamp(1.2rem, 1vw + 0.9rem, 1.55rem);
+  --t-statement: clamp(1.55rem, 2.5vw + 0.65rem, 2.75rem);
   --t-lead: clamp(1.0625rem, 0.45vw + 0.95rem, 1.25rem);
   --t-body: 1rem;
-  --t-small: 0.875rem;
   --t-mono: 0.75rem;
 
-  /* Layout y contenedor */
-  --wrap-max: 1320px;
-  --gutter: clamp(1.25rem, 4vw, 4rem);
+  /* Contenedor */
+  --wrap-max: 1340px;
+  --gutter: clamp(1.25rem, 4vw, 4.25rem);
   --nav-h: 72px;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
 
-  /* Tokens de movimiento (Emil Kowalski & motion.md) */
+  /* Curvas de animación (Emil Kowalski & motion.md) */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-ui: cubic-bezier(0.2, 0.8, 0.2, 1);
   --dur-in: 150ms;
-  --dur-out: 120ms;
   --dur-press: 90ms;
-  --dur-panel: 220ms;
-  --dur-enter: 600ms;
   --dur-photo: 600ms;
 }
 
