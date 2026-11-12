@@ -1,416 +1,500 @@
-/**
- * Motor 3D procedural sin dependencias para escalera helicoidal en acero inoxidable y vidrio.
- * Dibuja zancas curvadas metálicas con sombreado especular dinámico, peldaños de vidrio laminado,
- * montantes y pasamanos continuos. Se sincroniza con el scroll de página y respeta
- * `prefers-reduced-motion` y visibilidad en viewport mediante IntersectionObserver.
- */
+import * as THREE from "../vendor/three/three.module.min.js";
+import { RoomEnvironment } from "../vendor/three/RoomEnvironment.js";
 
+/**
+ * Escalera helicoidal 3D en acero inoxidable cepillado y vidrio templado
+ * renderizada con Three.js PBR (RoomEnvironment) y sincronizada con el scroll.
+ */
 export class HelicalStaircase3D {
   constructor(canvas, options = {}) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext("2d");
     this.options = {
-      steps: options.steps ?? 20,
-      turns: options.turns ?? 0.92,
-      innerRadius: options.innerRadius ?? 0.56,
-      outerRadius: options.outerRadius ?? 1.56,
-      height: options.height ?? 3.3,
-      tiltX: options.tiltX ?? 0.28,
-      baseAngle: options.baseAngle ?? -0.65,
-      mode: options.mode ?? "finished", // 'cad' | 'steel' | 'finished'
-      scrollSpanMultiplier: options.scrollSpanMultiplier ?? Math.PI * 2.2,
-      centerOffsetX: options.centerOffsetX ?? 0.14,
-      scaleFactor: options.scaleFactor ?? 0.25,
-      onAngleChange: options.onAngleChange ?? null
+      mode: options.mode || "finished",
+      steps: options.steps || 20,
+      sweepAngle: options.sweepAngle || Math.PI * 1.48,
+      baseAngle: options.baseAngle ?? -0.85,
+      scrollTurns: options.scrollTurns ?? 1.15,
+      cameraXOffset: options.cameraXOffset ?? -0.55,
+      cameraYOffset: options.cameraYOffset ?? 0.25,
+      cameraDistance: options.cameraDistance ?? 7.8,
+      scale: options.scale ?? 1.0,
+      reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      ...options
     };
 
+    this.mode = this.options.mode;
+    this.scrollProgress = 0;
     this.currentAngle = this.options.baseAngle;
     this.targetAngle = this.options.baseAngle;
-    this.pointerOffsetX = 0;
-    this.pointerOffsetY = 0;
+    this.pointerX = 0;
+    this.pointerY = 0;
+    this.currentTiltX = 0;
+    this.currentTiltY = 0;
     this.isVisible = true;
     this.rafId = null;
-    this.reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    this.needsRender = true;
+    this.disposed = false;
 
-    this.width = 0;
-    this.height = 0;
-    this.dpr = 1;
+    this._init();
+  }
 
-    this.handleResize = this.resize.bind(this);
-    this.tick = this.renderLoop.bind(this);
+  _init() {
+    if (!this.canvas) return;
 
+    try {
+      this.renderer = new THREE.WebGLRenderer({
+        canvas: this.canvas,
+        alpha: true,
+        antialias: true,
+        powerPreference: "high-performance"
+      });
+    } catch {
+      this.canvas.dataset.fallback = "true";
+      return;
+    }
+
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.08;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    this.scene = new THREE.Scene();
+
+    // Estudio metálico PBR monocromo con reflejos suaves de acero cepillado
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    const roomEnv = new RoomEnvironment();
+    this.envRT = pmrem.fromScene(roomEnv, 0.04);
+    this.scene.environment = this.envRT.texture;
+    roomEnv.dispose();
+    pmrem.dispose();
+
+    const width = Math.max(1, this.canvas.clientWidth || 800);
+    const height = Math.max(1, this.canvas.clientHeight || 600);
+    this.camera = new THREE.PerspectiveCamera(34, width / height, 0.1, 60);
+    this.camera.position.set(
+      this.options.cameraXOffset,
+      this.options.cameraYOffset,
+      this.options.cameraDistance
+    );
+    this.camera.lookAt(this.options.cameraXOffset * 0.45, 0.0, 0);
+
+    this._setupLights();
+    this._buildStaircase();
+    this.setMode(this.mode);
     this.resize();
-    this.observeVisibility();
-    window.addEventListener("resize", this.handleResize, { passive: true });
-    this.draw();
+
+    this._onResize = () => this.resize();
+    window.addEventListener("resize", this._onResize, { passive: true });
+
+    if ("IntersectionObserver" in window) {
+      this._observer = new IntersectionObserver(
+        (entries) => {
+          this.isVisible = Boolean(entries[0]?.isIntersecting);
+          if (this.isVisible && this.needsRender) {
+            this._scheduleTick();
+          }
+        },
+        { threshold: 0.02 }
+      );
+      this._observer.observe(this.canvas);
+    }
+
+    this._scheduleTick();
+  }
+
+  _setupLights() {
+    // Luz cenital de atrio oscuro + contra-luz cálida de taller para perfilar aristas
+    const ambient = new THREE.AmbientLight(0xd8dde6, 0.35);
+    this.scene.add(ambient);
+
+    const keyLight = new THREE.DirectionalLight(0xfff5e8, 2.8);
+    keyLight.position.set(4.5, 7.2, 5.4);
+    this.scene.add(keyLight);
+
+    const rimLight = new THREE.DirectionalLight(0xcdd7e6, 2.2);
+    rimLight.position.set(-6.0, 3.0, -4.5);
+    this.scene.add(rimLight);
+
+    const underFill = new THREE.PointLight(0xffffff, 1.1, 16);
+    underFill.position.set(1.2, -3.5, 3.2);
+    this.scene.add(underFill);
+  }
+
+  _createHelicalRibbonGeometry(radius, height, sweep, width, depth, segments = 96, yOffset = 0) {
+    const geom = new THREE.BufferGeometry();
+    const positions = [];
+    const normals = [];
+    const indices = [];
+
+    const hw = width / 2;
+    const hd = depth / 2;
+    const cross = [
+      [-hw, -hd],
+      [hw, -hd],
+      [hw, hd],
+      [-hw, hd]
+    ];
+
+    // Cada cara de la viga con sus propias normales para brillos metálicos limpios
+    for (let face = 0; face < 4; face++) {
+      const [ax, ay] = cross[face];
+      const [bx, by] = cross[(face + 1) % 4];
+      const baseVertex = positions.length / 3;
+
+      for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const theta = t * sweep;
+        const y = (t - 0.5) * height + yOffset;
+        const cos = Math.cos(theta);
+        const sin = Math.sin(theta);
+
+        const pushPt = (ox, oy) => {
+          const r = radius + ox;
+          positions.push(r * cos, y + oy, r * sin);
+        };
+
+        pushPt(ax, ay);
+        pushPt(bx, by);
+
+        // Normal aproximada perpendicular en sección radial/vertical
+        const nx = by - ay;
+        const ny = -(bx - ax);
+        const nLen = Math.hypot(nx, ny) || 1;
+        const rNorm = nx / nLen;
+        const yNorm = ny / nLen;
+
+        normals.push(rNorm * cos, yNorm, rNorm * sin);
+        normals.push(rNorm * cos, yNorm, rNorm * sin);
+      }
+
+      for (let i = 0; i < segments; i++) {
+        const a = baseVertex + i * 2;
+        const b = a + 1;
+        const c = a + 2;
+        const d = a + 3;
+        indices.push(a, b, d, a, d, c);
+      }
+    }
+
+    geom.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
+    geom.setIndex(indices);
+    return geom;
+  }
+
+  _createSectorTreadGeometry(innerR, outerR, angleWidth, thickness = 0.048) {
+    const shape = new THREE.Shape();
+    const half = angleWidth / 2;
+    const segs = 10;
+
+    for (let i = 0; i <= segs; i++) {
+      const a = -half + (i / segs) * angleWidth;
+      const x = outerR * Math.cos(a);
+      const y = outerR * Math.sin(a);
+      if (i === 0) shape.moveTo(x, y);
+      else shape.lineTo(x, y);
+    }
+    for (let i = segs; i >= 0; i--) {
+      const a = -half + (i / segs) * angleWidth;
+      shape.lineTo(innerR * Math.cos(a), innerR * Math.sin(a));
+    }
+    shape.closePath();
+
+    const extrude = new THREE.ExtrudeGeometry(shape, {
+      depth: thickness,
+      bevelEnabled: true,
+      bevelSegments: 2,
+      steps: 1,
+      bevelSize: 0.006,
+      bevelThickness: 0.006
+    });
+    extrude.rotateX(-Math.PI / 2);
+    extrude.translate(0, -thickness / 2, 0);
+    return extrude;
+  }
+
+  _createHelixCurve(radius, height, sweep, yOffset = 0, pointsCount = 96) {
+    const pts = [];
+    for (let i = 0; i <= pointsCount; i++) {
+      const t = i / pointsCount;
+      const theta = t * sweep;
+      const y = (t - 0.5) * height + yOffset;
+      pts.push(new THREE.Vector3(radius * Math.cos(theta), y, radius * Math.sin(theta)));
+    }
+    return new THREE.CatmullRomCurve3(pts);
+  }
+
+  _buildStaircase() {
+    this.rootGroup = new THREE.Group();
+    this.rootGroup.scale.setScalar(this.options.scale);
+    this.scene.add(this.rootGroup);
+
+    this.finishedGroup = new THREE.Group();
+    this.steelGroup = new THREE.Group();
+    this.wireframeGroup = new THREE.Group();
+
+    this.rootGroup.add(this.steelGroup);
+    this.rootGroup.add(this.finishedGroup);
+    this.rootGroup.add(this.wireframeGroup);
+
+    const R_IN = 1.05;
+    const R_OUT = 2.48;
+    const HEIGHT = 5.4;
+    const SWEEP = this.options.sweepAngle;
+    const STEPS = this.options.steps;
+
+    // Materiales reales Ferrari / Taller de autor
+    const brushedSteelMat = new THREE.MeshPhysicalMaterial({
+      color: 0xd4d8df,
+      metalness: 0.94,
+      roughness: 0.24,
+      clearcoat: 0.15,
+      clearcoatRoughness: 0.35,
+      envMapIntensity: 1.55
+    });
+
+    const darkSteelShadowMat = new THREE.MeshPhysicalMaterial({
+      color: 0x3b3f47,
+      metalness: 0.88,
+      roughness: 0.34,
+      envMapIntensity: 1.25
+    });
+
+    const polishedRailMat = new THREE.MeshPhysicalMaterial({
+      color: 0xeff2f6,
+      metalness: 0.98,
+      roughness: 0.12,
+      clearcoat: 0.4,
+      envMapIntensity: 1.7
+    });
+
+    const glassTreadMat = new THREE.MeshPhysicalMaterial({
+      color: 0xd9e6ea,
+      metalness: 0.08,
+      roughness: 0.07,
+      transparent: true,
+      opacity: 0.42,
+      reflectivity: 0.9,
+      envMapIntensity: 1.65,
+      side: THREE.DoubleSide
+    });
+
+    const glassBalustradeMat = new THREE.MeshPhysicalMaterial({
+      color: 0xcfdbe0,
+      metalness: 0.05,
+      roughness: 0.06,
+      transparent: true,
+      opacity: 0.22,
+      envMapIntensity: 1.4,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+
+    const wireLineMat = new THREE.LineBasicMaterial({
+      color: 0xd8dce4,
+      transparent: true,
+      opacity: 0.68
+    });
+
+    const wireSubMat = new THREE.LineBasicMaterial({
+      color: 0x6f7582,
+      transparent: true,
+      opacity: 0.42
+    });
+
+    // 1. Zancas metálicas helicoidales (interior y exterior)
+    const outerStringerGeom = this._createHelicalRibbonGeometry(R_OUT, HEIGHT, SWEEP, 0.09, 0.42, 110, 0);
+    const innerStringerGeom = this._createHelicalRibbonGeometry(R_IN, HEIGHT, SWEEP, 0.08, 0.38, 110, 0);
+
+    const outerStringer = new THREE.Mesh(outerStringerGeom, brushedSteelMat);
+    const innerStringer = new THREE.Mesh(innerStringerGeom, darkSteelShadowMat);
+    this.steelGroup.add(outerStringer, innerStringer);
+
+    // 2. Pasamanos tubulares continuos en acero inoxidable pulido
+    const outerRailCurve = this._createHelixCurve(R_OUT, HEIGHT, SWEEP, 1.06, 96);
+    const innerRailCurve = this._createHelixCurve(R_IN, HEIGHT, SWEEP, 1.04, 96);
+    const outerRail = new THREE.Mesh(new THREE.TubeGeometry(outerRailCurve, 96, 0.036, 14, false), polishedRailMat);
+    const innerRail = new THREE.Mesh(new THREE.TubeGeometry(innerRailCurve, 96, 0.032, 12, false), brushedSteelMat);
+    this.steelGroup.add(outerRail, innerRail);
+
+    // 3. Montantes verticales de arranque y remate + cartelas metálicas bajo peldaños
+    const stepAngle = SWEEP / STEPS;
+    const treadGeom = this._createSectorTreadGeometry(R_IN + 0.05, R_OUT - 0.05, stepAngle * 0.94, 0.048);
+    const cleatGeom = new THREE.BoxGeometry(R_OUT - R_IN - 0.04, 0.042, 0.065);
+    const pinGeom = new THREE.CylinderGeometry(0.02, 0.02, 1.04, 8);
+
+    for (let i = 0; i < STEPS; i++) {
+      const t = (i + 0.5) / STEPS;
+      const theta = t * SWEEP;
+      const y = (t - 0.5) * HEIGHT;
+
+      // Soporte metálico soldado en acero (visible en fase taller y acabada)
+      const cleat = new THREE.Mesh(cleatGeom, brushedSteelMat);
+      const midR = (R_IN + R_OUT) / 2;
+      cleat.position.set(midR * Math.cos(theta), y - 0.038, midR * Math.sin(theta));
+      cleat.rotation.y = -theta;
+      this.steelGroup.add(cleat);
+
+      // Botones / fijaciones puntuales de vidrio en zancas
+      if (i % 2 === 0 || i === STEPS - 1) {
+        const postOut = new THREE.Mesh(pinGeom, brushedSteelMat);
+        postOut.position.set(R_OUT * Math.cos(theta), y + 0.54, R_OUT * Math.sin(theta));
+        this.steelGroup.add(postOut);
+      }
+
+      // Peldaño de vidrio templado laminado
+      const tread = new THREE.Mesh(treadGeom, glassTreadMat);
+      tread.position.set(0, y, 0);
+      tread.rotation.y = -theta;
+      this.finishedGroup.add(tread);
+
+      // Perfil de wireframe técnico monocromo (Fase 01)
+      const wireEdges = new THREE.EdgesGeometry(treadGeom, 25);
+      const wireTread = new THREE.LineSegments(wireEdges, wireLineMat);
+      wireTread.position.set(0, y, 0);
+      wireTread.rotation.y = -theta;
+      this.wireframeGroup.add(wireTread);
+    }
+
+    // 4. Barandilla continua de vidrio laminado curvo
+    const outerGlassGeom = this._createHelicalRibbonGeometry(R_OUT, HEIGHT, SWEEP, 0.022, 0.86, 96, 0.61);
+    const innerGlassGeom = this._createHelicalRibbonGeometry(R_IN, HEIGHT, SWEEP, 0.02, 0.84, 96, 0.59);
+    const outerGlass = new THREE.Mesh(outerGlassGeom, glassBalustradeMat);
+    const innerGlass = new THREE.Mesh(innerGlassGeom, glassBalustradeMat);
+    this.finishedGroup.add(outerGlass, innerGlass);
+
+    // 5. Elementos de estudio técnico / plano CAD (Fase 01 monocromo arquitectónico)
+    const wireOuter = new THREE.LineSegments(new THREE.EdgesGeometry(outerStringerGeom, 22), wireLineMat);
+    const wireInner = new THREE.LineSegments(new THREE.EdgesGeometry(innerStringerGeom, 22), wireSubMat);
+    const wireRailOut = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(outerRailCurve.getPoints(96)),
+      wireLineMat
+    );
+    const wireRailIn = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(innerRailCurve.getPoints(96)),
+      wireSubMat
+    );
+
+    // Anillos concéntricos de replanteo en planta (sin color neón)
+    const ringPts = [];
+    for (let i = 0; i <= 72; i++) {
+      const a = (i / 72) * Math.PI * 2;
+      ringPts.push(new THREE.Vector3(R_OUT * Math.cos(a), -HEIGHT / 2 - 0.15, R_OUT * Math.sin(a)));
+    }
+    const baseRing = new THREE.Line(new THREE.BufferGeometry().setFromPoints(ringPts), wireSubMat);
+
+    // Eje vertical central de replanteo
+    const axisGeom = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, -HEIGHT / 2 - 0.35, 0),
+      new THREE.Vector3(0, HEIGHT / 2 + 1.15, 0)
+    ]);
+    const axisLine = new THREE.Line(axisGeom, wireSubMat);
+
+    this.wireframeGroup.add(wireOuter, wireInner, wireRailOut, wireRailIn, baseRing, axisLine);
   }
 
   setMode(mode) {
-    if (this.options.mode !== mode) {
-      this.options.mode = mode;
-      if (this.reducedMotion || !this.rafId) {
-        this.draw();
-      }
+    this.mode = mode;
+    if (!this.steelGroup || !this.finishedGroup || !this.wireframeGroup) return;
+
+    if (mode === "cad") {
+      this.wireframeGroup.visible = true;
+      this.steelGroup.visible = false;
+      this.finishedGroup.visible = false;
+    } else if (mode === "steel") {
+      this.wireframeGroup.visible = false;
+      this.steelGroup.visible = true;
+      this.finishedGroup.visible = false;
+    } else {
+      this.wireframeGroup.visible = false;
+      this.steelGroup.visible = true;
+      this.finishedGroup.visible = true;
     }
+    this.needsRender = true;
+    this._scheduleTick();
   }
 
   setScrollProgress(progress) {
-    const clamped = Math.min(1, Math.max(0, progress));
-    if (this.reducedMotion) {
-      this.currentAngle = this.options.baseAngle;
+    const clamped = Math.max(0, Math.min(1, progress));
+    this.scrollProgress = clamped;
+
+    if (this.options.reducedMotion) {
       this.targetAngle = this.options.baseAngle;
+      this.needsRender = true;
+      this._scheduleTick();
       return;
     }
-    this.targetAngle = this.options.baseAngle + clamped * this.options.scrollSpanMultiplier;
-    this.ensureRunning();
+
+    this.targetAngle = this.options.baseAngle + clamped * Math.PI * 2 * this.options.scrollTurns;
+    this.needsRender = true;
+    this._scheduleTick();
   }
 
   setPointerTilt(nx, ny) {
-    if (this.reducedMotion) return;
-    this.pointerOffsetX = nx * 0.18;
-    this.pointerOffsetY = ny * 0.08;
-    this.ensureRunning();
-  }
-
-  observeVisibility() {
-    if (!("IntersectionObserver" in window)) return;
-    this.observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          this.isVisible = entry.isIntersecting;
-          if (this.isVisible && !this.reducedMotion) {
-            this.ensureRunning();
-          }
-        });
-      },
-      { threshold: 0.02 }
-    );
-    this.observer.observe(this.canvas);
+    if (this.options.reducedMotion) return;
+    this.pointerX = Math.max(-1, Math.min(1, nx));
+    this.pointerY = Math.max(-1, Math.min(1, ny));
+    this.needsRender = true;
+    this._scheduleTick();
   }
 
   resize() {
-    const rect = this.canvas.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
-    this.width = rect.width;
-    this.height = rect.height;
-    this.canvas.width = Math.round(rect.width * this.dpr);
-    this.canvas.height = Math.round(rect.height * this.dpr);
-    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    this.draw();
+    if (!this.renderer || !this.canvas || !this.camera) return;
+    const width = Math.max(1, this.canvas.clientWidth || this.canvas.parentElement?.clientWidth || 800);
+    const height = Math.max(1, this.canvas.clientHeight || this.canvas.parentElement?.clientHeight || 600);
+    this.renderer.setSize(width, height, false);
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
+    this.needsRender = true;
+    this._scheduleTick();
   }
 
-  ensureRunning() {
-    if (this.rafId || this.reducedMotion || !this.isVisible) return;
-    this.rafId = requestAnimationFrame(this.tick);
+  _scheduleTick() {
+    if (this.disposed || this.rafId !== null) return;
+    this.rafId = window.requestAnimationFrame(() => this._tick());
   }
 
-  renderLoop() {
-    if (!this.isVisible || this.reducedMotion) {
-      this.rafId = null;
-      return;
+  _tick() {
+    this.rafId = null;
+    if (this.disposed || !this.renderer || !this.scene || !this.camera || !this.rootGroup) return;
+
+    const dAngle = this.targetAngle - this.currentAngle;
+    const dTiltX = this.pointerX * 0.08 - this.currentTiltX;
+    const dTiltY = this.pointerY * 0.05 - this.currentTiltY;
+
+    this.currentAngle += dAngle * 0.14;
+    this.currentTiltX += dTiltX * 0.12;
+    this.currentTiltY += dTiltY * 0.12;
+
+    this.rootGroup.rotation.y = this.currentAngle + this.currentTiltX;
+    this.rootGroup.rotation.x = 0.08 + this.currentTiltY;
+
+    if (this.isVisible) {
+      this.renderer.render(this.scene, this.camera);
     }
 
-    const diff = this.targetAngle - this.currentAngle;
-    if (Math.abs(diff) > 0.0008) {
-      this.currentAngle += diff * 0.12;
-      this.draw();
-      this.rafId = requestAnimationFrame(this.tick);
+    const stillMoving =
+      Math.abs(dAngle) > 0.0008 ||
+      Math.abs(dTiltX) > 0.0005 ||
+      Math.abs(dTiltY) > 0.0005;
+
+    if (stillMoving && this.isVisible && !this.options.reducedMotion) {
+      this._scheduleTick();
     } else {
       this.currentAngle = this.targetAngle;
-      this.draw();
-      this.rafId = null;
-    }
-  }
-
-  project(p, yaw, pitch) {
-    // Rotación alrededor del eje Y (giro de la escalera al hacer scroll)
-    const cosY = Math.cos(yaw);
-    const sinY = Math.sin(yaw);
-    const x1 = p.x * cosY - p.z * sinY;
-    const z1 = p.x * sinY + p.z * cosY;
-
-    // Inclinación arquitectónica de cámara en X
-    const cosX = Math.cos(pitch);
-    const sinX = Math.sin(pitch);
-    const y2 = p.y * cosX - z1 * sinX;
-    const z2 = p.y * sinX + z1 * cosX;
-
-    const camDist = 5.4;
-    const fov = Math.min(this.width, this.height) * this.options.scaleFactor * 3.1;
-    const zDepth = z2 + camDist;
-    const scale = fov / Math.max(0.8, zDepth);
-
-    const cx = this.width * (0.5 + this.options.centerOffsetX);
-    const cy = this.height * 0.51;
-
-    return {
-      x: cx + x1 * scale,
-      y: cy - y2 * scale,
-      z: zDepth,
-      rx: x1,
-      ry: y2,
-      rz: z2
-    };
-  }
-
-  draw() {
-    if (!this.width || !this.height) return;
-    const ctx = this.ctx;
-    ctx.clearRect(0, 0, this.width, this.height);
-
-    const yaw = this.currentAngle + this.pointerOffsetX;
-    const pitch = this.options.tiltX + this.pointerOffsetY;
-    const mode = this.options.mode;
-
-    if (typeof this.options.onAngleChange === "function") {
-      const deg = Math.round((((this.currentAngle - this.options.baseAngle) * 180) / Math.PI) % 360);
-      this.options.onAngleChange(deg < 0 ? deg + 360 : deg);
-    }
-
-    const { steps, turns, innerRadius, outerRadius, height } = this.options;
-    const totalTheta = Math.PI * 2 * turns;
-    const stepAngle = totalTheta / steps;
-    const stepRise = height / steps;
-    const yStart = -height * 0.5;
-    const stringerDepth = 0.24;
-
-    // Halo ambiental sutil bajo la escalera
-    const cx = this.width * (0.5 + this.options.centerOffsetX);
-    const cy = this.height * 0.52;
-    const halo = ctx.createRadialGradient(cx, cy, 10, cx, cy, Math.min(this.width, this.height) * 0.48);
-    if (mode === "cad") {
-      halo.addColorStop(0, "rgba(56, 189, 248, 0.14)");
-      halo.addColorStop(1, "rgba(14, 17, 22, 0)");
-    } else {
-      halo.addColorStop(0, "rgba(210, 225, 242, 0.12)");
-      halo.addColorStop(0.55, "rgba(120, 145, 175, 0.04)");
-      halo.addColorStop(1, "rgba(14, 15, 18, 0)");
-    }
-    ctx.fillStyle = halo;
-    ctx.fillRect(0, 0, this.width, this.height);
-
-    const drawables = [];
-
-    // 1. Eje central / núcleo sutil en modo CAD y referencias radiales de cota
-    if (mode === "cad") {
-      const axisBot = this.project({ x: 0, y: yStart - 0.3, z: 0 }, yaw, pitch);
-      const axisTop = this.project({ x: 0, y: -yStart + 0.4, z: 0 }, yaw, pitch);
-      drawables.push({
-        z: 6.2,
-        type: "line",
-        p1: axisBot,
-        p2: axisTop,
-        stroke: "rgba(56, 189, 248, 0.45)",
-        width: 1.2,
-        dash: [6, 6]
-      });
-    }
-
-    // 2. Zancas helicoidales (cinta metálica interior y exterior en AISI 316L)
-    const stringerSegments = steps * 2;
-    const segTheta = totalTheta / stringerSegments;
-    const segRise = height / stringerSegments;
-
-    [innerRadius, outerRadius].forEach((radius, rIdx) => {
-      const isOuter = rIdx === 1;
-      for (let i = 0; i < stringerSegments; i++) {
-        const t0 = i * segTheta;
-        const t1 = (i + 1) * segTheta;
-        const y0 = yStart + i * segRise;
-        const y1 = yStart + (i + 1) * segRise;
-
-        const pA = this.project({ x: Math.cos(t0) * radius, y: y0, z: Math.sin(t0) * radius }, yaw, pitch);
-        const pB = this.project({ x: Math.cos(t1) * radius, y: y1, z: Math.sin(t1) * radius }, yaw, pitch);
-        const pC = this.project(
-          { x: Math.cos(t1) * radius, y: y1 - stringerDepth, z: Math.sin(t1) * radius },
-          yaw,
-          pitch
-        );
-        const pD = this.project(
-          { x: Math.cos(t0) * radius, y: y0 - stringerDepth, z: Math.sin(t0) * radius },
-          yaw,
-          pitch
-        );
-
-        const avgZ = (pA.z + pB.z + pC.z + pD.z) * 0.25;
-        // Normal aproximada mirando hacia la dirección radial tras rotación
-        const midAngle = (t0 + t1) * 0.5 + yaw;
-        const lightDot = Math.cos(midAngle - 0.85) * 0.5 + 0.5;
-
-        let fill = "transparent";
-        let stroke = "rgba(255,255,255,0.22)";
-
-        if (mode === "cad") {
-          fill = "rgba(56, 189, 248, 0.05)";
-          stroke = "rgba(125, 211, 252, 0.72)";
-        } else if (mode === "steel") {
-          const lum = Math.round(52 + lightDot * (isOuter ? 165 : 130));
-          fill = `rgb(${lum}, ${lum + 3}, ${lum + 8})`;
-          stroke = `rgba(255, 255, 255, ${0.28 + lightDot * 0.35})`;
-        } else {
-          // Modo acabado espejo/cepillado monumental
-          const lum = Math.round(44 + Math.pow(lightDot, 1.35) * (isOuter ? 188 : 145));
-          fill = `rgb(${lum}, ${lum + 4}, ${lum + 10})`;
-          stroke = `rgba(240, 246, 255, ${0.22 + lightDot * 0.42})`;
-        }
-
-        drawables.push({
-          z: avgZ,
-          type: "quad",
-          pts: [pA, pB, pC, pD],
-          fill,
-          stroke,
-          lineWidth: mode === "cad" ? 1 : 0.75
-        });
-
-        // Pasamanos superior tubular en acero inoxidable
-        const railHeight = 0.84;
-        const r0 = this.project(
-          { x: Math.cos(t0) * radius, y: y0 + railHeight, z: Math.sin(t0) * radius },
-          yaw,
-          pitch
-        );
-        const r1 = this.project(
-          { x: Math.cos(t1) * radius, y: y1 + railHeight, z: Math.sin(t1) * radius },
-          yaw,
-          pitch
-        );
-        drawables.push({
-          z: (r0.z + r1.z) * 0.5 - 0.03,
-          type: "line",
-          p1: r0,
-          p2: r1,
-          stroke:
-            mode === "cad"
-              ? "rgba(186, 230, 253, 0.9)"
-              : `rgba(${Math.round(165 + lightDot * 88)}, ${Math.round(172 + lightDot * 82)}, 255, 0.95)`,
-          width: isOuter ? 3.2 : 2.3
-        });
-
-        // Paño de barandilla en vidrio estructural (solo modo 'finished')
-        if (mode === "finished" && i % 2 === 0) {
-          const gA = this.project(
-            { x: Math.cos(t0) * radius, y: y0 + 0.08, z: Math.sin(t0) * radius },
-            yaw,
-            pitch
-          );
-          const gB = this.project(
-            { x: Math.cos(t1) * radius, y: y1 + 0.08, z: Math.sin(t1) * radius },
-            yaw,
-            pitch
-          );
-          drawables.push({
-            z: (gA.z + gB.z + r0.z + r1.z) * 0.25 + 0.01,
-            type: "quad",
-            pts: [r0, r1, gB, gA],
-            fill: `rgba(195, 224, 245, ${0.06 + lightDot * 0.08})`,
-            stroke: "rgba(220, 238, 255, 0.22)",
-            lineWidth: 0.65
-          });
-        }
-      }
-    });
-
-    // 3. Peldaños (vidrio laminado / estructura metálica en taller) + montantes puntuales
-    for (let s = 0; s < steps; s++) {
-      const a0 = s * stepAngle;
-      const a1 = a0 + stepAngle * 0.92;
-      const y = yStart + s * stepRise;
-
-      const pIn0 = this.project({ x: Math.cos(a0) * innerRadius, y, z: Math.sin(a0) * innerRadius }, yaw, pitch);
-      const pOut0 = this.project({ x: Math.cos(a0) * outerRadius, y, z: Math.sin(a0) * outerRadius }, yaw, pitch);
-      const pOut1 = this.project({ x: Math.cos(a1) * outerRadius, y, z: Math.sin(a1) * outerRadius }, yaw, pitch);
-      const pIn1 = this.project({ x: Math.cos(a1) * innerRadius, y, z: Math.sin(a1) * innerRadius }, yaw, pitch);
-
-      const avgZ = (pIn0.z + pOut0.z + pOut1.z + pIn1.z) * 0.25;
-      const midAngle = (a0 + a1) * 0.5 + yaw;
-      const spec = Math.cos(midAngle - 0.6) * 0.5 + 0.5;
-
-      if (mode === "cad") {
-        drawables.push({
-          z: avgZ,
-          type: "quad",
-          pts: [pIn0, pOut0, pOut1, pIn1],
-          fill: "rgba(56, 189, 248, 0.08)",
-          stroke: "rgba(125, 211, 252, 0.85)",
-          lineWidth: 1
-        });
-      } else if (mode === "steel") {
-        // En fase taller se muestran las ménsulas/zancas soporte y bastidor metálico del peldaño
-        drawables.push({
-          z: avgZ,
-          type: "quad",
-          pts: [pIn0, pOut0, pOut1, pIn1],
-          fill: `rgba(145, 152, 165, ${0.22 + spec * 0.2})`,
-          stroke: `rgba(235, 240, 248, ${0.45 + spec * 0.35})`,
-          lineWidth: 1.15
-        });
-      } else {
-        // Peldaño de vidrio laminado templado con canto luminoso
-        drawables.push({
-          z: avgZ,
-          type: "quad",
-          pts: [pIn0, pOut0, pOut1, pIn1],
-          fill: `rgba(185, 224, 248, ${0.14 + spec * 0.16})`,
-          stroke: `rgba(225, 244, 255, ${0.52 + spec * 0.42})`,
-          lineWidth: 1.25
-        });
-      }
-
-      // Montantes verticales cada 2 peldaños
-      if (s % 2 === 0) {
-        const postBot = this.project({ x: Math.cos(a0) * outerRadius, y, z: Math.sin(a0) * outerRadius }, yaw, pitch);
-        const postTop = this.project(
-          { x: Math.cos(a0) * outerRadius, y: y + 0.84, z: Math.sin(a0) * outerRadius },
-          yaw,
-          pitch
-        );
-        drawables.push({
-          z: (postBot.z + postTop.z) * 0.5,
-          type: "line",
-          p1: postBot,
-          p2: postTop,
-          stroke: mode === "cad" ? "rgba(56, 189, 248, 0.55)" : "rgba(220, 226, 236, 0.65)",
-          width: mode === "cad" ? 1 : 1.5
-        });
-      }
-    }
-
-    // Ordenación de atrás hacia delante (Painter's Algorithm)
-    drawables.sort((a, b) => b.z - a.z);
-
-    for (const item of drawables) {
-      if (item.type === "quad") {
-        ctx.beginPath();
-        ctx.moveTo(item.pts[0].x, item.pts[0].y);
-        for (let i = 1; i < item.pts.length; i++) {
-          ctx.lineTo(item.pts[i].x, item.pts[i].y);
-        }
-        ctx.closePath();
-        ctx.fillStyle = item.fill;
-        ctx.fill();
-        ctx.lineWidth = item.lineWidth;
-        ctx.strokeStyle = item.stroke;
-        ctx.stroke();
-      } else if (item.type === "line") {
-        ctx.beginPath();
-        if (item.dash) ctx.setLineDash(item.dash);
-        else ctx.setLineDash([]);
-        ctx.moveTo(item.p1.x, item.p1.y);
-        ctx.lineTo(item.p2.x, item.p2.y);
-        ctx.lineWidth = item.width;
-        ctx.lineCap = "round";
-        ctx.strokeStyle = item.stroke;
-        ctx.stroke();
-        ctx.setLineDash([]);
+      this.needsRender = false;
+      if (this.isVisible) {
+        this.renderer.render(this.scene, this.camera);
       }
     }
   }
 
-  destroy() {
-    window.removeEventListener("resize", this.handleResize);
-    if (this.observer) this.observer.disconnect();
-    if (this.rafId) cancelAnimationFrame(this.rafId);
+  dispose() {
+    this.disposed = true;
+    if (this.rafId) window.cancelAnimationFrame(this.rafId);
+    window.removeEventListener("resize", this._onResize);
+    if (this._observer) this._observer.disconnect();
+    if (this.envRT) this.envRT.dispose();
+    if (this.renderer) this.renderer.dispose();
   }
 }

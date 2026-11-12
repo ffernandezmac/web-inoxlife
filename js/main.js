@@ -71,32 +71,27 @@ function initScrollProgressFallback() {
    ========================================================================== */
 function initHeroStaircase3D() {
   const canvas = document.getElementById("hero-stair-canvas");
-  const angleReadout = document.getElementById("hero-angle-readout");
   const hero = document.getElementById("hero-portada");
   if (!canvas || !hero) return;
 
   const isCompact = window.innerWidth <= 900;
   const stair = new HelicalStaircase3D(canvas, {
     mode: "finished",
-    steps: 22,
-    turns: 0.95,
-    baseAngle: -0.7,
-    scrollSpanMultiplier: Math.PI * 2.5,
-    centerOffsetX: isCompact ? 0.02 : 0.21,
-    scaleFactor: isCompact ? 0.22 : 0.29,
-    onAngleChange: (deg) => {
-      if (angleReadout) {
-        angleReadout.textContent = `${String(deg).padStart(3, "0")}°`;
-      }
-    }
+    steps: 20,
+    sweepAngle: Math.PI * 1.48,
+    baseAngle: -0.9,
+    scrollTurns: 1.25,
+    cameraXOffset: isCompact ? 0 : -1.55,
+    cameraYOffset: isCompact ? 0.35 : 0.15,
+    cameraDistance: isCompact ? 9.6 : 7.8,
+    scale: isCompact ? 0.88 : 1.06
   });
 
   const updateScroll = () => {
     const maxDocScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-    // Primera vuelta rápida al abandonar el Hero, rotación continua en el resto de la página
-    const heroWeight = Math.min(1, window.scrollY / Math.max(600, hero.offsetHeight * 1.15));
+    const heroWeight = Math.min(1, window.scrollY / Math.max(560, hero.offsetHeight * 1.1));
     const docWeight = window.scrollY / maxDocScroll;
-    stair.setScrollProgress(heroWeight * 0.55 + docWeight * 0.45);
+    stair.setScrollProgress(heroWeight * 0.58 + docWeight * 0.42);
   };
 
   window.addEventListener("scroll", updateScroll, { passive: true });
@@ -165,48 +160,30 @@ function initScrollytellingChapters() {
   const cards = document.querySelectorAll("[data-chapter-index]");
   const dots = document.querySelectorAll("[data-stage-dot]");
   const stageCaption = document.getElementById("scrolly-stage-caption");
-  const modeBadge = document.getElementById("scrolly-mode-badge");
   const insetImg = document.getElementById("scrolly-inset-img");
-  const insetLabel = document.getElementById("scrolly-inset-label");
-  const cadReadout = document.getElementById("cad-readout");
-  const cadFill = document.getElementById("cad-fill");
 
   if (!section || !cards.length) return;
 
-  const phaseVisuals = [
-    {
-      mode: "cad",
-      badge: "MODO 01 · DESPIECE CAD Y CÁLCULO",
-      insetTitle: "Estudio estructural · Málaga"
-    },
-    {
-      mode: "steel",
-      badge: "MODO 02 · ZANCA INOX Y SOLDADURA TIG",
-      insetTitle: "Taller propio · Pol. Villa Rosa"
-    },
-    {
-      mode: "finished",
-      badge: "MODO 03 · VIDRIO TEMPLADO Y MONTAJE",
-      insetTitle: "Entrega final en obra"
-    }
-  ];
+  const phaseModes = ["cad", "steel", "finished"];
 
   const scrollyStair = canvas
     ? new HelicalStaircase3D(canvas, {
         mode: "cad",
         steps: 18,
-        turns: 0.9,
-        baseAngle: -0.4,
-        centerOffsetX: -0.04,
-        scaleFactor: 0.27,
-        scrollSpanMultiplier: Math.PI * 2
+        sweepAngle: Math.PI * 1.42,
+        baseAngle: -0.65,
+        scrollTurns: 0.9,
+        cameraXOffset: 0,
+        cameraYOffset: 0.15,
+        cameraDistance: window.innerWidth <= 640 ? 11.6 : 10.4,
+        scale: 0.96
       })
     : null;
 
   const setActiveChapter = (index) => {
     const ch = INOXLIFE_DATA.chapters[index];
-    const vis = phaseVisuals[index];
-    if (!ch || !vis) return;
+    const mode = phaseModes[index];
+    if (!ch || !mode) return;
 
     cards.forEach((card, i) => card.classList.toggle("is-active", i === index));
     dots.forEach((dot, i) => {
@@ -217,14 +194,12 @@ function initScrollytellingChapters() {
       }
     });
 
-    if (scrollyStair) scrollyStair.setMode(vis.mode);
-    if (modeBadge) modeBadge.textContent = vis.badge;
+    if (scrollyStair) scrollyStair.setMode(mode);
     if (stageCaption) stageCaption.textContent = ch.caption;
     if (insetImg) {
       insetImg.src = ch.image;
       insetImg.alt = ch.caption;
     }
-    if (insetLabel) insetLabel.textContent = vis.insetTitle;
   };
 
   const chapterObserver = new IntersectionObserver(
@@ -244,31 +219,20 @@ function initScrollytellingChapters() {
 
   cards.forEach((card) => chapterObserver.observe(card));
 
-  const updateCadRuler = () => {
+  const updateSectionRotation = () => {
     const rect = section.getBoundingClientRect();
     const viewH = window.innerHeight;
-    const totalScrollable = Math.max(1, rect.height - viewH * 0.5);
+    const totalScrollable = Math.max(1, rect.height - viewH * 0.45);
     const rawProgress = (viewH * 0.45 - rect.top) / totalScrollable;
     const clamped = Math.min(1, Math.max(0, rawProgress));
-    const mm = Math.round(clamped * 1000);
-
-    if (cadReadout) {
-      cadReadout.textContent = `${String(mm).padStart(3, "0")} mm`;
-    }
-    if (cadFill) {
-      const isHorizontal = window.innerWidth <= 1024;
-      cadFill.style.transform = isHorizontal
-        ? `scaleX(${Math.max(0.08, clamped)})`
-        : `scaleY(${Math.max(0.08, clamped)})`;
-    }
     if (scrollyStair) {
       scrollyStair.setScrollProgress(clamped);
     }
   };
 
-  window.addEventListener("scroll", updateCadRuler, { passive: true });
-  window.addEventListener("resize", updateCadRuler, { passive: true });
-  updateCadRuler();
+  window.addEventListener("scroll", updateSectionRotation, { passive: true });
+  window.addEventListener("resize", updateSectionRotation, { passive: true });
+  updateSectionRotation();
 
   dots.forEach((dot) => {
     dot.addEventListener("click", () => {
@@ -361,13 +325,11 @@ function initProjectsPortfolio() {
             width="640"
             height="400"
           >
-          <span class="project-card__badge">${project.categoryLabel}</span>
         </div>
         <div class="project-card__body">
-          <div class="project-card__meta">${project.location} · ${project.clientType}</div>
+          <div class="project-card__meta">${project.location} · ${project.categoryLabel}</div>
           <h3 class="project-card__title">${project.title}</h3>
           <p class="project-card__summary">${project.summary}</p>
-          <div class="project-card__materials">Materiales: ${project.materials}</div>
           <div class="project-card__actions">
             <button
               type="button"
@@ -375,14 +337,14 @@ function initProjectsPortfolio() {
               data-open-project="${project.id}"
               aria-label="Ver ficha técnica de ${project.title}"
             >
-              Ver ficha (${project.images.length} fotos)
+              Ver ficha (${project.images.length})
             </button>
             <button
               type="button"
-              class="action-link"
+              class="btn btn--stark"
               data-select-reference="Obra similar a: ${project.title} (${project.location})"
             >
-              Pedir algo similar <span class="btn__arrow" aria-hidden="true">→</span>
+              Pedir similar
             </button>
           </div>
         </div>
@@ -678,7 +640,7 @@ function initQuoteForm() {
 
     if (firstInvalid) {
       if (statusEl) {
-        statusEl.className = "form-status is-error";
+        statusEl.className = "form-status form-status--error";
         statusEl.textContent = "Revisa los campos marcados en rojo antes de enviar tu solicitud.";
         statusEl.hidden = false;
       }
@@ -716,7 +678,7 @@ function initQuoteForm() {
     );
 
     if (statusEl) {
-      statusEl.className = "form-status is-success";
+      statusEl.className = "form-status";
       statusEl.innerHTML = `
         <p style="margin:0 0 0.65rem;">
           <strong>¡Solicitud validada correctamente!</strong> Hemos preparado la ficha técnica de tu consulta para oficina técnica.

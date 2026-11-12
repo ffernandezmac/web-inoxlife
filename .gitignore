@@ -1,6 +1,7 @@
 # Dependencias y archivos temporales
 node_modules/
 .agents/
+.taste-skill/
 .DS_Store
 Thumbs.db
 *.log
