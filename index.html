@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acero Inoxidable y Carpintería Metálica a Medida en Málaga | INOXLIFE</title>
+    <meta
+      name="description"
+      content="Ingeniería, fabricación en taller propio e instalación de proyectos a medida en acero inoxidable, latón y vidrio en Málaga, Costa del Sol y Gibraltar. +25 años de experiencia."
+    >
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    >
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/styles.css">
+  </head>
+  <body data-atmosphere="light">
+    <!-- Indicador de progreso de scroll superior (scroll-progress-indicator) -->
+    <div id="scroll-progress" aria-hidden="true"></div>
+
+    <!-- Enlace de salto al contenido principal (accessibility: Skip links) -->
+    <a href="#contenido-principal" class="skip-link visually-hidden">
+      Saltar al contenido principal
+    </a>
+
+    <!-- Cabecera fija translúcida -->
+    <header class="site-header" id="top">
+      <div class="wrap site-header__bar">
+        <a href="#top" class="brand" aria-label="INOXLIFE — Inicio">
+          <img
+            src="assets/img/logo-inoxlife.png"
+            alt="Logotipo INOXLIFE"
+            class="brand__logo"
+            width="34"
+            height="34"
+          >
+          <span class="brand__text">
+            <span class="brand__name">INOXLIFE</span>
+            <span class="brand__tag">AISI 304 · 316L · LATÓN</span>
+          </span>
+        </a>
+
+        <button
+          type="button"
+          id="menu-toggle"
+          class="menu-toggle"
+          aria-expanded="false"
+          aria-controls="primary-nav"
+          aria-label="Abrir menú de navegación"
+        >
+          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18M3 12h18M3 18h18" />
+          </svg>
+        </button>
+
+        <nav id="primary-nav" class="primary-nav" aria-label="Principal">
+          <ul>
+            <li><a href="#que-fabricamos">Qué fabricamos</a></li>
+            <li><a href="#del-plano-a-la-obra">Del plano a la obra</a></li>
+            <li><a href="#obras">Obras realizadas</a></li>
+            <li><a href="#dudas">Preguntas frecuentes</a></li>
+            <li><a href="#presupuesto">Contacto</a></li>
+          </ul>
+        </nav>
+
+        <div class="site-header__actions">
+          <a href="tel:+34912666973" class="header-phone" aria-label="Llamar al 912 66 69 73">
+            912 66 69 73
+          </a>
+          <a href="#presupuesto" class="btn btn--primary">
+            Solicitar presupuesto
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- ====================================================================
+           PANTALLA 1: Hero 50/50 + Coreografía de entrada + Doble vía
+           ==================================================================== -->
+      <section class="hero">
+        <div class="wrap hero__grid">
+          <div class="hero__content">
+            <span class="eyebrow hero__eyebrow">
+              INGENIERÍA Y TALLER PROPIO EN MÁLAGA · +25 AÑOS
+            </span>
+            <h1 id="contenido-principal" tabindex="-1" class="hero__title">
+              Acero inoxidable a medida para arquitectura e industria
+            </h1>
+            <p class="hero__lead">
+              Diseñamos en oficina técnica, fabricamos en nuestras instalaciones de Málaga e instalamos
+              escaleras singulares, marquesinas hoteleras, barandillas con vidrio, piscinas en acero
+              inoxidable y estructuras especiales.
+            </p>
+
+            <div class="hero__ctas">
+              <a href="#presupuesto" class="btn btn--primary">
+                Solicitar presupuesto <span class="btn__arrow" aria-hidden="true">→</span>
+              </a>
+              <a href="#obras" class="btn btn--secondary">
+                Ver obras realizadas
+              </a>
+            </div>
+
+            <!-- Bifurcación rápida por tipo de cliente -->
+            <div class="hero__dual-paths" role="group" aria-label="Accesos rápidos según tipo de proyecto">
+              <a
+                href="#presupuesto"
+                class="path-card"
+                data-profile-select="Arquitecto / Constructora / Hotel"
+                data-profile-label="Vía Profesional: Estudio de arquitectura, constructora u hotel"
+              >
+                <div>
+                  <span class="path-card__tag">Arquitectos, Constructoras y Hoteles</span>
+                  <h2 class="path-card__title">Fabricación bajo plano y gran formato</h2>
+                  <p class="path-card__desc">
+                    Marquesinas, pasarelas, fachadas en AISI 316L marino y calderería estructural.
+                  </p>
+                </div>
+                <span class="action-link">
+                  Enviar planos o mediciones <span class="btn__arrow" aria-hidden="true">→</span>
+                </span>
+              </a>
+
+              <a
+                href="#presupuesto"
+                class="path-card"
+                data-profile-select="Particular / Vivienda / Villa"
+                data-profile-label="Vía Particular: Escalera, barandilla, piscina o decoración a medida"
+              >
+                <div>
+                  <span class="path-card__tag">Particulares, Villas y Negocios</span>
+                  <h2 class="path-card__title">Escaleras, piscinas y piezas únicas</h2>
+                  <p class="path-card__desc">
+                    Tomamos medidas en obra, levantamos el diseño contigo y realizamos el montaje completo.
+                  </p>
+                </div>
+                <span class="action-link">
+                  Pedir visita o presupuesto <span class="btn__arrow" aria-hidden="true">→</span>
+                </span>
+              </a>
+            </div>
+          </div>
+
+          <div class="hero__visual">
+            <div class="hero-stage">
+              <img
+                id="hero-stage-img"
+                class="hero-stage__img"
+                src="assets/img/projects/wtc-gibraltar-1.jpg"
+                alt="Estructura exterior y marquesinas en acero inoxidable del World Trade Center en Gibraltar realizadas por Inoxlife"
+                width="800"
+                height="650"
+                fetchpriority="high"
+              >
+              <div class="hero-stage__hud">
+                <div>
+                  <span id="hero-stage-code" class="hero-stage__code">
+                    REF. WTC-GIB · ESTRUCTURA SINGULAR
+                  </span>
+                  <div id="hero-stage-title" class="hero-stage__caption">
+                    World Trade Center · Gibraltar
+                  </div>
+                  <div id="hero-stage-spec" class="hero-stage__spec">
+                    AISI 316L Marino · Pasarela acristalada, marquesinas y árbol interior
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn--ghost-dark"
+                  data-select-reference="Obra similar a: World Trade Center Gibraltar"
+                >
+                  Pedir algo similar →
+                </button>
+              </div>
+            </div>
+
+            <div class="hero-switcher" role="group" aria-label="Cambiar obra mostrada en portada">
+              <button type="button" class="hero-switcher__btn" data-hero-slide="wtc" aria-pressed="true">
+                01 · WTC Gibraltar
+              </button>
+              <button type="button" class="hero-switcher__btn" data-hero-slide="crowne" aria-pressed="false">
+                02 · Crowne Plaza Estepona
+              </button>
+              <button type="button" class="hero-switcher__btn" data-hero-slide="escalera" aria-pressed="false">
+                03 · Bufete López Linares
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           PANTALLA 2: Declaración iluminada al scroll (word-highlight) + Hechos
+           ==================================================================== -->
+      <section class="statement-section" id="declaracion">
+        <div class="wrap">
+          <span class="eyebrow">POR QUÉ TRABAJAMOS A MEDIDA</span>
+          <p id="statement-quote" class="statement-quote">
+            No trabajamos con catálogo cerrado. Cada escalera, marquesina, chimenea o piscina nace de un
+            plano técnico, se fabrica a medida en nuestro taller de Málaga y se entrega instalada en obra.
+          </p>
+
+          <div class="pillars-grid">
+            <div class="pillar-card">
+              <span class="pillar-card__value">+25 años</span>
+              <span class="pillar-card__label">Trayectoria en acero inoxidable</span>
+              <span class="pillar-card__note">
+                Herederos de la histórica fábrica malagueña de estructuras metálicas.
+              </span>
+            </div>
+            <div class="pillar-card">
+              <span class="pillar-card__value">Oficina Técnica</span>
+              <span class="pillar-card__label">Ingeniería, Arquitectura y Diseño</span>
+              <span class="pillar-card__note">
+                Cálculo estructural, despiece CAD y levantamiento en obra propia.
+              </span>
+            </div>
+            <div class="pillar-card">
+              <span class="pillar-card__value">AISI 304 / 316L</span>
+              <span class="pillar-card__label">Calidad marina, latón y vidrio</span>
+              <span class="pillar-card__note">
+                Trazabilidad de materia prima (Acerinox) y soldadura TIG certificada.
+              </span>
+            </div>
+            <div class="pillar-card">
+              <span class="pillar-card__value">Llave en mano</span>
+              <span class="pillar-card__label">Fabricación + montaje propio</span>
+              <span class="pillar-card__note">
+                Pol. Ind. Villa Rosa (Málaga), Costa del Sol, Gibraltar y proyectos nacionales.
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           PANTALLA 3: Peek-List Interactivo ("Qué fabricamos bajo plano")
+           ==================================================================== -->
+      <section class="section" id="que-fabricamos">
+        <div class="wrap">
+          <div class="section-head">
+            <div class="section-head__main">
+              <span class="eyebrow">ESPECIALIDADES EN METALURGIA</span>
+              <h2>Qué fabricamos bajo plano</h2>
+              <p>
+                Selecciona cada línea de trabajo para inspeccionar materiales, acabados y obras reales
+                ejecutadas por nuestro equipo.
+              </p>
+            </div>
+          </div>
+
+          <div class="peek-grid">
+            <ul class="peek-list" role="list">
+              <li class="peek-item">
+                <button
+                  type="button"
+                  class="peek-trigger"
+                  data-peek-id="escaleras-barandillas"
+                  aria-selected="true"
+                >
+                  <span class="peek-trigger__num">01</span>
+                  <div>
+                    <div class="peek-trigger__title">Barandillas y escaleras singulares</div>
+                    <p class="peek-trigger__summary">
+                      Escaleras helicoidales, de eje central o zanca vista y barandillas curvas con
+                      vidrio estructural laminado.
+                    </p>
+                  </div>
+                  <span class="peek-trigger__arrow" aria-hidden="true">→</span>
+                </button>
+              </li>
+
+              <li class="peek-item">
+                <button
+                  type="button"
+                  class="peek-trigger"
+                  data-peek-id="marquesinas-hoteles"
+                  aria-selected="false"
+                >
+                  <span class="peek-trigger__num">02</span>
+                  <div>
+                    <div class="peek-trigger__title">Marquesinas, fachadas y obra hotelera</div>
+                    <p class="peek-trigger__summary">
+                      Marquesinas de gran vuelo, revestimiento de pilares, pasarelas acristaladas y
+                      equipamiento en AISI 316L marino.
+                    </p>
+                  </div>
+                  <span class="peek-trigger__arrow" aria-hidden="true">→</span>
+                </button>
+              </li>
+
+              <li class="peek-item">
+                <button
+                  type="button"
+                  class="peek-trigger"
+                  data-peek-id="proyectos-especiales"
+                  aria-selected="false"
+                >
+                  <span class="peek-trigger__num">03</span>
+                  <div>
+                    <div class="peek-trigger__title">Proyectos especiales y obra civil</div>
+                    <p class="peek-trigger__summary">
+                      Árboles estructurales interiores, puentes acristalados, monumentos urbanos y
+                      geometrías no seriadas.
+                    </p>
+                  </div>
+                  <span class="peek-trigger__arrow" aria-hidden="true">→</span>
+                </button>
+              </li>
+
+              <li class="peek-item">
+                <button
+                  type="button"
+                  class="peek-trigger"
+                  data-peek-id="decoracion-piscinas"
+                  aria-selected="false"
+                >
+                  <span class="peek-trigger__num">04</span>
+                  <div>
+                    <div class="peek-trigger__title">Decoración, chimeneas, mesas y piscinas inox</div>
+                    <p class="peek-trigger__summary">
+                      Chimeneas en latón e inoxidable, mobiliario para hostelería, mesas arquitectónicas
+                      CUBIC y vasos de piscina en acero inoxidable.
+                    </p>
+                  </div>
+                  <span class="peek-trigger__arrow" aria-hidden="true">→</span>
+                </button>
+              </li>
+
+              <li class="peek-item">
+                <button
+                  type="button"
+                  class="peek-trigger"
+                  data-peek-id="ingenieria-gran-formato"
+                  aria-selected="false"
+                >
+                  <span class="peek-trigger__num">05</span>
+                  <div>
+                    <div class="peek-trigger__title">Ingeniería y grandes desarrollos industriales</div>
+                    <p class="peek-trigger__summary">
+                      Oficina técnica propia y capacidad para estructuras pesadas e industriales en
+                      alianza con NAVACEL.
+                    </p>
+                  </div>
+                  <span class="peek-trigger__arrow" aria-hidden="true">→</span>
+                </button>
+              </li>
+            </ul>
+
+            <aside class="peek-preview" aria-label="Vista previa de especialidad seleccionada">
+              <div class="peek-preview__media">
+                <img
+                  id="peek-img"
+                  class="peek-preview__img"
+                  src="assets/img/projects/lopez-linares-1.jpg"
+                  alt="Escalera a medida de acero inoxidable con peldaños de vidrio realizada por Inoxlife"
+                  width="640"
+                  height="480"
+                >
+              </div>
+              <div class="peek-preview__body">
+                <h3 id="peek-title" style="margin-bottom:0.85rem;">
+                  Barandillas y escaleras singulares
+                </h3>
+                <div class="peek-preview__specs">
+                  <div class="spec-row">
+                    <span class="spec-row__key">Aleaciones</span>
+                    <span id="peek-alloys" class="spec-row__val">
+                      AISI 304 · AISI 316L Marino · Vidrio laminado templado
+                    </span>
+                  </div>
+                  <div class="spec-row">
+                    <span class="spec-row__key">Acabados</span>
+                    <span id="peek-finish" class="spec-row__val">
+                      Satinado esmerilado, pulido espejo o combinado con madera/vidrio
+                    </span>
+                  </div>
+                  <div class="spec-row">
+                    <span class="spec-row__key">Obra real</span>
+                    <span id="peek-location" class="spec-row__val">
+                      Bufete López Linares (Málaga) · Puerto Deportivo (Marbella)
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  id="peek-cta"
+                  class="btn btn--primary"
+                  style="width:100%;"
+                  data-select-reference="Especialidad: Barandillas y escaleras singulares"
+                >
+                  Consultar presupuesto de esta línea <span class="btn__arrow" aria-hidden="true">→</span>
+                </button>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           PANTALLA 4 (Nivel 3): Scrollytelling Fijo por Capítulos + Cota Viva
+           ==================================================================== -->
+      <section class="scrolly-section" id="del-plano-a-la-obra">
+        <div class="wrap">
+          <div class="section-head">
+            <div class="section-head__main">
+              <span class="eyebrow">PROCESO INTEGRAL SIN INTERMEDIARIOS</span>
+              <h2>Del plano técnico al montaje en obra</h2>
+              <p>
+                Desliza para recorrer las tres fases reales por las que pasa cada pieza en Inoxlife:
+                ingeniería propia, transformación en taller y puesta en obra.
+              </p>
+            </div>
+          </div>
+
+          <div class="scrolly-layout">
+            <!-- Regla milimetrada viva (Cota técnica) -->
+            <div class="cad-ruler" aria-hidden="true">
+              <span class="cad-ruler__label">COTA CAD</span>
+              <span id="cad-readout" class="cad-ruler__readout">000 mm</span>
+              <div class="cad-ruler__track">
+                <div id="cad-fill" class="cad-ruler__fill"></div>
+              </div>
+              <div class="cad-ruler__ticks">
+                <span>01 · ING</span>
+                <span>02 · TIG</span>
+                <span>03 · OBRA</span>
+              </div>
+            </div>
+
+            <!-- 3 Capítulos en columna izquierda -->
+            <div class="scrolly-chapters">
+              <article class="chapter-card is-active" data-chapter-index="0">
+                <span class="chapter-card__code">COTA 000 — 320 mm · FASE 01 / OFICINA TÉCNICA</span>
+                <h3 class="chapter-card__title">
+                  Ingeniería, medición en obra y despiece bajo plano
+                </h3>
+                <p class="chapter-card__lead">
+                  Partimos del plano de tu estudio de arquitectura o realizamos el levantamiento y
+                  medición técnica directamente en obra.
+                </p>
+                <ul class="chapter-card__list">
+                  <li>Departamento propio de Ingeniería, Arquitectura y Diseño en Málaga.</li>
+                  <li>
+                    Revisión de cargas, anclajes, dilataciones y elección de aleación (AISI 304 interior
+                    o AISI 316L para costa y piscinas).
+                  </li>
+                  <li>Presupuesto desglosado y definición de acabados antes de cortar la primera pieza.</li>
+                </ul>
+                <div class="chapter-card__metric">
+                  <span>Tolerancia de diseño:</span>
+                  <strong>± 0,5 mm CAD</strong>
+                </div>
+              </article>
+
+              <article class="chapter-card" data-chapter-index="1">
+                <span class="chapter-card__code">COTA 320 — 710 mm · FASE 02 / FABRICACIÓN EN TALLER</span>
+                <h3 class="chapter-card__title">
+                  Corte, curvado y soldadura TIG en taller propio
+                </h3>
+                <p class="chapter-card__lead">
+                  Transformamos la materia prima en nuestras instalaciones del Polígono Industrial Villa
+                  Rosa (Málaga), sin subcontratar la fabricación.
+                </p>
+                <ul class="chapter-card__list">
+                  <li>
+                    Materia prima certificada (acero inoxidable de referentes como Acerinox, latón y
+                    vidrio estructural).
+                  </li>
+                  <li>
+                    Curvado de tubo y chapa para escaleras helicoidales, barandillas orgánicas y
+                    mobiliario sin juntas vistas.
+                  </li>
+                  <li>
+                    Soldadura TIG de penetración controlada, decapado, pasivado y pulido artesanal
+                    (satinado, vibrado o espejo).
+                  </li>
+                </ul>
+                <div class="chapter-card__metric">
+                  <span>Trayectoria del equipo:</span>
+                  <strong>+25 años en metalurgia</strong>
+                </div>
+              </article>
+
+              <article class="chapter-card" data-chapter-index="2">
+                <span class="chapter-card__code">COTA 710 — 1000 mm · FASE 03 / PUESTA EN OBRA</span>
+                <h3 class="chapter-card__title">
+                  Transporte especial, montaje e instalación llave en mano
+                </h3>
+                <p class="chapter-card__lead">
+                  Nuestro propio equipo de montadores instala la pieza en destino coordinándose con la
+                  dirección facultativa o la propiedad.
+                </p>
+                <ul class="chapter-card__list">
+                  <li>
+                    Montaje limpio y seguro en hoteles en activo, edificios corporativos, obra nueva y
+                    viviendas particulares.
+                  </li>
+                  <li>
+                    Ajuste final en destino de vidrios templados/laminados, pasamanos continuos y
+                    pruebas de estanqueidad.
+                  </li>
+                  <li>
+                    Capacidad para abordar desde una pieza residencial única hasta grandes desarrollos
+                    industriales.
+                  </li>
+                </ul>
+                <div class="chapter-card__metric">
+                  <span>Cobertura habitual:</span>
+                  <strong>Málaga · Costa del Sol · Gibraltar · Nacional</strong>
+                </div>
+              </article>
+            </div>
+
+            <!-- Visor fijo derecho (position: sticky) -->
+            <div class="scrolly-stage">
+              <div class="scrolly-stage__viewport">
+                <div class="scrolly-layer is-active" data-stage-layer="0">
+                  <img
+                    src="assets/img/projects/wtc-gibraltar-3.jpg"
+                    alt="Fase 01: Ingeniería y pasarela acristalada con estructura de acero inoxidable"
+                    width="720"
+                    height="560"
+                  >
+                </div>
+                <div class="scrolly-layer" data-stage-layer="1">
+                  <img
+                    src="assets/img/projects/taller-soldadura.jpg"
+                    alt="Fase 02: Trabajo de soldadura TIG de precisión en el taller de Inoxlife en Málaga"
+                    width="720"
+                    height="560"
+                  >
+                </div>
+                <div class="scrolly-layer" data-stage-layer="2">
+                  <img
+                    src="assets/img/projects/crowne-plaza-2.jpg"
+                    alt="Fase 03: Marquesina en acero inoxidable ya instalada en Hotel Crowne Plaza Estepona"
+                    width="720"
+                    height="560"
+                  >
+                </div>
+                <div class="scrolly-stage__grid-overlay" aria-hidden="true"></div>
+              </div>
+
+              <div class="scrolly-stage__footer">
+                <span id="scrolly-stage-caption">
+                  Fase 01 · Diseño estructural y definición de encuentros acero-vidrio
+                </span>
+                <div class="scrolly-dots" role="group" aria-label="Seleccionar fase del proceso">
+                  <button
+                    type="button"
+                    class="scrolly-dot"
+                    data-stage-dot="0"
+                    aria-current="step"
+                    aria-label="Ir a Fase 01: Ingeniería y plano"
+                  ></button>
+                  <button
+                    type="button"
+                    class="scrolly-dot"
+                    data-stage-dot="1"
+                    aria-label="Ir a Fase 02: Taller y soldadura"
+                  ></button>
+                  <button
+                    type="button"
+                    class="scrolly-dot"
+                    data-stage-dot="2"
+                    aria-label="Ir a Fase 03: Montaje en obra"
+                  ></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           PANTALLA 5: Portfolio Filtrable de Obras Reales + "Pedir algo similar"
+           ==================================================================== -->
+      <section class="section" id="obras">
+        <div class="wrap">
+          <div class="section-head">
+            <div class="section-head__main">
+              <span class="eyebrow">PORTFOLIO VERIFICADO</span>
+              <h2>Obras realizadas a medida</h2>
+              <p>
+                Explora proyectos reales ejecutados por Inoxlife. Si buscas una solución parecida para tu
+                obra o vivienda, pulsa «Pedir algo similar» para pre-cargar esa referencia en tu
+                solicitud.
+              </p>
+            </div>
+          </div>
+
+          <search aria-label="Filtrar obras realizadas por categoría">
+            <div class="filter-bar" role="group" aria-label="Categorías de proyectos">
+              <button type="button" class="filter-pill" data-filter="all" aria-pressed="true">
+                Todas las obras (8)
+              </button>
+              <button type="button" class="filter-pill" data-filter="singular" aria-pressed="false">
+                Obra Singular y Corporativa
+              </button>
+              <button type="button" class="filter-pill" data-filter="hoteles" aria-pressed="false">
+                Hoteles y Contract
+              </button>
+              <button type="button" class="filter-pill" data-filter="escaleras" aria-pressed="false">
+                Escaleras y Barandillas
+              </button>
+              <button type="button" class="filter-pill" data-filter="decoracion" aria-pressed="false">
+                Decoración y Mobiliario
+              </button>
+            </div>
+          </search>
+
+          <p id="projects-live-count" class="visually-hidden" role="status" aria-live="polite"></p>
+
+          <div id="projects-grid" class="projects-grid"></div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           PANTALLA 6: Clientes Verificados y Dudas Frecuentes (2x2 abierto)
+           ==================================================================== -->
+      <section class="section section--soft" id="dudas">
+        <div class="wrap">
+          <div class="section-head">
+            <div class="section-head__main">
+              <span class="eyebrow">CONFIANZA DEMOSTRADA</span>
+              <h2>Empresas, cadenas hoteleras e instituciones</h2>
+              <p>
+                Organizaciones y estudios para los que nuestro equipo ha ejecutado proyectos de
+                carpintería metálica, estructuras y acero inoxidable.
+              </p>
+            </div>
+          </div>
+
+          <div class="clients-strip" role="list" aria-label="Clientes destacados de Inoxlife">
+            <div class="client-tile" role="listitem">
+              <img src="assets/img/logos/acerinox.png" alt="Acerinox" loading="lazy">
+            </div>
+            <div class="client-tile" role="listitem">
+              <img src="assets/img/logos/sacyr.png" alt="Sacyr" loading="lazy">
+            </div>
+            <div class="client-tile" role="listitem">
+              <img src="assets/img/logos/melia.png" alt="Meliá Hotels International" loading="lazy">
+            </div>
+            <div class="client-tile" role="listitem">
+              <img src="assets/img/logos/crowne-plaza.png" alt="Crowne Plaza Hotels & Resorts" loading="lazy">
+            </div>
+            <div class="client-tile" role="listitem">
+              <img src="assets/img/logos/ac-hotels.png" alt="AC Hotels by Marriott" loading="lazy">
+            </div>
+            <div class="client-tile" role="listitem">
+              <img src="assets/img/logos/el-fuerte.png" alt="Grupo El Fuerte" loading="lazy">
+            </div>
+            <div class="client-tile" role="listitem">
+              <img src="assets/img/logos/guadalpin.png" alt="Gran Hotel Guadalpín Banús" loading="lazy">
+            </div>
+            <div class="client-tile" role="listitem">
+              <img src="assets/img/logos/marbella.png" alt="Ayuntamiento de Marbella" loading="lazy">
+            </div>
+          </div>
+
+          <div class="section-head" style="margin-top:2rem;">
+            <div class="section-head__main">
+              <span class="eyebrow">RESPUESTAS CLARAS ANTES DE CONTACTAR</span>
+              <h2>Preguntas habituales sobre encargos a medida</h2>
+            </div>
+          </div>
+
+          <div class="faq-grid">
+            <article class="faq-card">
+              <h3>¿Necesito tener planos de arquitecto o hacéis medición en obra?</h3>
+              <p>
+                Trabajamos de las dos formas. Si eres un estudio de arquitectura, constructora u hotel,
+                presupuestamos directamente sobre tus planos CAD/PDF y mediciones. Si eres un particular
+                o negocio, nuestro equipo técnico visita la obra, toma medidas reales y diseña la
+                solución contigo.
+              </p>
+            </article>
+
+            <article class="faq-card">
+              <h3>¿Por qué no tenéis un catálogo con precios fijos?</h3>
+              <p>
+                Porque cada escalera, marquesina, barandilla o piscina cambia según las dimensiones del
+                hueco, el tipo de anclaje, el espesor del vidrio y la aleación necesaria (AISI 304 para
+                interior o AISI 316L marino para costa). Así solo pagas por la solución exacta que
+                requiere tu proyecto.
+              </p>
+            </article>
+
+            <article class="faq-card">
+              <h3>¿Trabajáis solo en Málaga o os desplazáis a otras provincias?</h3>
+              <p>
+                Nuestra fábrica y taller están en el Polígono Industrial Villa Rosa (Málaga), con
+                actuación continua en toda la Costa del Sol (Marbella, Estepona, Benalmádena),
+                Gibraltar, resto de Andalucía, Madrid e islas (como Ibiza) según la envergadura del
+                proyecto.
+              </p>
+            </article>
+
+            <article class="faq-card">
+              <h3>¿Fabricáis e instaláis vosotros mismos?</h3>
+              <p>
+                Sí. Controlamos el ciclo completo: oficina técnica de ingeniería y diseño, corte,
+                plegado, curvado y soldadura TIG en nuestro taller, y montaje final en obra con personal
+                propio.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           PANTALLA 7: Solicitud de Presupuesto a Medida (modern-web-guidance: forms)
+           ==================================================================== -->
+      <section class="section" id="presupuesto">
+        <div class="wrap booking-grid">
+          <div>
+            <span class="eyebrow">CONTACTO DIRECTO CON OFICINA TÉCNICA</span>
+            <h2 id="form-heading" style="font-size:var(--t-h2);margin-bottom:0.85rem;">
+              Solicitar presupuesto o estudio de proyecto
+            </h2>
+            <p style="font-size:var(--t-lead);color:var(--ink-body);margin-top:0;">
+              Cuéntanos qué quieres fabricar, la ubicación de la obra y si dispones ya de planos o
+              prefieres que hagamos medición técnica. Respondemos en <strong>24–48 h laborables</strong>.
+            </p>
+
+            <div class="contact-panel">
+              <div class="contact-panel__item">
+                <span class="contact-panel__label">Teléfono directo</span>
+                <a href="tel:+34912666973" class="contact-panel__value">912 66 69 73</a>
+              </div>
+              <div class="contact-panel__item">
+                <span class="contact-panel__label">Correo técnico y envío de planos</span>
+                <a href="mailto:info@inoxlife.es" class="contact-panel__value">info@inoxlife.es</a>
+              </div>
+              <div class="contact-panel__item">
+                <span class="contact-panel__label">Fábrica y taller en Málaga</span>
+                <div class="contact-panel__value" style="font-size:0.96rem;">
+                  Ctra. Carril de Guetara, 78 · Pol. Ind. Villa Rosa, 29010 Málaga
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <form
+            id="presupuesto-form"
+            class="quote-form"
+            aria-labelledby="form-heading"
+            method="POST"
+            action="#presupuesto"
+            novalidate
+          >
+            <!-- Banner dinámico cuando el usuario pulsa "Pedir algo similar" -->
+            <div id="selected-ref-banner" class="selected-ref-banner" hidden>
+              <div>
+                <strong>Referencia seleccionada:</strong>
+                <span id="selected-ref-text"></span>
+              </div>
+              <button type="button" id="clear-ref-btn" class="selected-ref-banner__clear">
+                Quitar
+              </button>
+            </div>
+            <input type="hidden" id="referencia_obra" name="referencia_obra" value="">
+
+            <!-- Honeypot anti-spam oculto de tecnologías de asistencia -->
+            <div class="visually-hidden" aria-hidden="true">
+              <label for="website_Trap">No rellenar este campo</label>
+              <input type="text" id="website_Trap" name="website_Trap" tabindex="-1" autocomplete="off">
+            </div>
+
+            <!-- 3 opciones mutuamente excluyentes -> Radio buttons visibles (Selection Control Matrix) -->
+            <fieldset class="form-fieldset">
+              <legend>1. Tipo de solicitante</legend>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input
+                    type="radio"
+                    name="perfil_cliente"
+                    value="Arquitecto / Constructora / Hotel"
+                    checked
+                  >
+                  <span>Arquitecto / Empresa</span>
+                </label>
+                <label class="radio-option">
+                  <input
+                    type="radio"
+                    name="perfil_cliente"
+                    value="Particular / Vivienda / Villa"
+                  >
+                  <span>Particular / Vivienda</span>
+                </label>
+                <label class="radio-option">
+                  <input
+                    type="radio"
+                    name="perfil_cliente"
+                    value="Hostelería / Industria"
+                  >
+                  <span>Hostelería / Industria</span>
+                </label>
+              </div>
+            </fieldset>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="nombre" class="form-label">
+                  Nombre o empresa <span class="required-mark" aria-hidden="true">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="nombre"
+                  name="nombre"
+                  class="form-input"
+                  autocomplete="name"
+                  enterkeyhint="next"
+                  aria-describedby="nombre-error"
+                  required
+                >
+                <span id="nombre-error" class="field-error" hidden></span>
+              </div>
+
+              <div class="form-group">
+                <label for="telefono" class="form-label">
+                  Teléfono de contacto <span class="required-mark" aria-hidden="true">*</span>
+                </label>
+                <input
+                  type="tel"
+                  id="telefono"
+                  name="telefono"
+                  class="form-input"
+                  autocomplete="tel"
+                  inputmode="tel"
+                  enterkeyhint="next"
+                  aria-describedby="telefono-error"
+                  required
+                >
+                <span id="telefono-error" class="field-error" hidden></span>
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="email" class="form-label">
+                  Correo electrónico <span class="required-mark" aria-hidden="true">*</span>
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  class="form-input"
+                  autocomplete="email"
+                  autocorrect="off"
+                  autocapitalize="none"
+                  spellcheck="false"
+                  enterkeyhint="next"
+                  aria-describedby="email-error"
+                  required
+                >
+                <span id="email-error" class="field-error" hidden></span>
+              </div>
+
+              <div class="form-group">
+                <label for="ubicacion" class="form-label">
+                  Localidad de la obra
+                </label>
+                <input
+                  type="text"
+                  id="ubicacion"
+                  name="ubicacion"
+                  class="form-input"
+                  autocomplete="address-level2"
+                  placeholder="Ej. Málaga, Marbella, Estepona, Gibraltar..."
+                  enterkeyhint="next"
+                >
+              </div>
+            </div>
+
+            <fieldset class="form-fieldset">
+              <legend>2. ¿Dispones ya de planos o medidas?</legend>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input type="radio" name="tiene_planos" value="Tengo planos CAD / PDF" checked>
+                  <span>Tengo planos / PDF</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="tiene_planos" value="Tengo medidas aproximadas o boceto">
+                  <span>Medidas / Boceto</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="tiene_planos" value="Necesito medición técnica en obra">
+                  <span>Necesito medición</span>
+                </label>
+              </div>
+            </fieldset>
+
+            <div class="form-group">
+              <label for="mensaje" class="form-label">
+                Descripción del trabajo a medida <span class="required-mark" aria-hidden="true">*</span>
+              </label>
+              <span id="mensaje-hint" class="form-hint">
+                Indica tipo de pieza (escalera, barandilla, marquesina, piscina, chimenea...), acabado o
+                plazos estimados.
+              </span>
+              <textarea
+                id="mensaje"
+                name="mensaje"
+                rows="4"
+                class="form-textarea"
+                aria-describedby="mensaje-hint mensaje-error"
+                required
+              ></textarea>
+              <span id="mensaje-error" class="field-error" hidden></span>
+            </div>
+
+            <button type="submit" id="submit-quote-btn" class="btn btn--primary" style="width:100%;">
+              Solicitar presupuesto a medida <span class="btn__arrow" aria-hidden="true">→</span>
+            </button>
+
+            <div id="form-status" class="form-status" role="status" aria-live="polite" hidden></div>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <!-- ======================================================================
+         Footer corporativo con enlaces legales funcionales
+         ====================================================================== -->
+    <footer class="site-footer">
+      <div class="wrap">
+        <div class="footer-grid">
+          <div>
+            <h3>INOXLIFE · Acero Inoxidable y Metalurgia a Medida</h3>
+            <p style="margin:0 0 0.75rem;font-size:0.9rem;">
+              Ingeniería, fabricación en taller propio e instalación de proyectos singulares en acero
+              inoxidable, latón y vidrio estructural.
+            </p>
+            <p style="margin:0;font-family:var(--font-mono);font-size:0.78rem;color:var(--ink-muted-dark);">
+              Ctra. Carril de Guetara, 78 · Pol. Ind. Villa Rosa · 29010 Málaga
+            </p>
+          </div>
+
+          <div>
+            <h3>Navegación</h3>
+            <ul class="footer-links">
+              <li><a href="#que-fabricamos">Qué fabricamos bajo plano</a></li>
+              <li><a href="#del-plano-a-la-obra">Proceso: Del plano a la obra</a></li>
+              <li><a href="#obras">Portfolio de obras reales</a></li>
+              <li><a href="#dudas">Preguntas frecuentes</a></li>
+              <li><a href="#presupuesto">Solicitar presupuesto</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h3>Contacto y Legal</h3>
+            <ul class="footer-links">
+              <li><a href="tel:+34912666973">Tel: 912 66 69 73</a></li>
+              <li><a href="mailto:info@inoxlife.es">Email: info@inoxlife.es</a></li>
+              <li><button type="button" data-open-legal="aviso">Aviso Legal</button></li>
+              <li><button type="button" data-open-legal="privacidad">Política de Privacidad</button></li>
+              <li><button type="button" data-open-legal="cookies">Política de Cookies</button></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <span>© 2026 INOXLIFE S.L. Todos los derechos reservados.</span>
+          <span>Fotografías de obras reales ejecutadas por Inoxlife en Málaga, Costa del Sol, Gibraltar e Ibiza.</span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Modal nativo <dialog> para ficha técnica de obra -->
+    <dialog id="project-dialog" class="site-dialog" aria-labelledby="project-dialog-title">
+      <div class="site-dialog__header">
+        <h2 id="project-dialog-title" style="font-size:1.2rem;">Ficha técnica de obra</h2>
+        <button type="button" id="project-dialog-close" class="btn btn--secondary" style="min-block-size:38px;padding:0.4rem 0.85rem;">
+          Cerrar ✕
+        </button>
+      </div>
+      <div id="project-dialog-body" class="site-dialog__body"></div>
+    </dialog>
+
+    <!-- Modal nativo <dialog> para textos legales -->
+    <dialog id="legal-dialog" class="site-dialog" aria-labelledby="legal-dialog-title">
+      <div class="site-dialog__header">
+        <h2 id="legal-dialog-title" style="font-size:1.2rem;">Información legal</h2>
+        <button type="button" id="legal-dialog-close" class="btn btn--secondary" style="min-block-size:38px;padding:0.4rem 0.85rem;">
+          Cerrar ✕
+        </button>
+      </div>
+      <div id="legal-dialog-body" class="site-dialog__body"></div>
+    </dialog>
+
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>

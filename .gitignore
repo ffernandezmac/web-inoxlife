@@ -1,0 +1,9 @@
+# Dependencias y archivos temporales
+node_modules/
+.agents/
+.DS_Store
+Thumbs.db
+*.log
+.env
+.env.*
+
