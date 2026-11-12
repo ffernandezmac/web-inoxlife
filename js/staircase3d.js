@@ -1,29 +1,188 @@
 import * as THREE from "../vendor/three/three.module.min.js";
-import { RoomEnvironment } from "../vendor/three/RoomEnvironment.js";
 
 /**
- * Escalera helicoidal 3D en acero inoxidable cepillado y vidrio templado
- * renderizada con Three.js PBR (RoomEnvironment) y sincronizada con el scroll.
+ * Genera un mapa de estudio de alto contraste (tiras softbox blancas sobre negro profundo)
+ * para lograr reflejos anisótropos reales de acero inoxidable cepillado y pulido espejo.
  */
-export class HelicalStaircase3D {
+function createStainlessStudioEnv(renderer) {
+  const width = 512;
+  const height = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+
+  // Fondo oscuro de taller/atrio
+  const baseGrad = ctx.createLinearGradient(0, 0, 0, height);
+  baseGrad.addColorStop(0.0, "#1d2026");
+  baseGrad.addColorStop(0.42, "#0b0c0e");
+  baseGrad.addColorStop(0.55, "#15171b");
+  baseGrad.addColorStop(1.0, "#07080a");
+  ctx.fillStyle = baseGrad;
+  ctx.fillRect(0, 0, width, height);
+
+  // Softboxes principales verticales y horizontales que dibujan reflejos de acero inox
+  const drawStrip = (x, y, w, h, peakColor, edgeColor = "rgba(255,255,255,0)") => {
+    const g = ctx.createLinearGradient(x, y, x + w, y);
+    g.addColorStop(0.0, edgeColor);
+    g.addColorStop(0.18, peakColor);
+    g.addColorStop(0.82, peakColor);
+    g.addColorStop(1.0, edgeColor);
+    ctx.fillStyle = g;
+    ctx.fillRect(x, y, w, h);
+  };
+
+  drawStrip(34, 18, 68, 128, "rgba(255,255,255,0.96)");
+  drawStrip(168, 12, 46, 150, "rgba(232,238,247,0.88)");
+  drawStrip(292, 26, 84, 108, "rgba(255,252,245,0.95)");
+  drawStrip(424, 34, 42, 130, "rgba(215,224,236,0.78)");
+
+  // Tira cenital continua cálida-neutra y rebote sutil inferior
+  const topBand = ctx.createLinearGradient(0, 0, 0, 44);
+  topBand.addColorStop(0, "rgba(255,255,255,0.9)");
+  topBand.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = topBand;
+  ctx.fillRect(0, 0, width, 44);
+
+  const floorBand = ctx.createLinearGradient(0, 175, 0, 230);
+  floorBand.addColorStop(0, "rgba(180,190,205,0)");
+  floorBand.addColorStop(0.5, "rgba(180,190,205,0.22)");
+  floorBand.addColorStop(1, "rgba(180,190,205,0)");
+  ctx.fillStyle = floorBand;
+  ctx.fillRect(0, 175, width, 55);
+
+  const equirect = new THREE.CanvasTexture(canvas);
+  equirect.mapping = THREE.EquirectangularReflectionMapping;
+  equirect.colorSpace = THREE.SRGBColorSpace;
+
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  pmrem.compileEquirectangularShader();
+  const envRT = pmrem.fromEquirectangular(equirect);
+  equirect.dispose();
+  pmrem.dispose();
+  return envRT;
+}
+
+/**
+ * Textura direccional de grano fino de acero inoxidable cepillado (roughness + bump).
+ */
+function createBrushedSteelMap() {
+  const size = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "rgb(138,138,138)";
+  ctx.fillRect(0, 0, size, size);
+
+  // Trazos longitudinales finos de esmerilado satinado
+  for (let i = 0; i < 1800; i++) {
+    const y = (i * 73) % size;
+    const x = (i * 139) % size;
+    const len = 30 + ((i * 29) % 140);
+    const v = 95 + ((i * 53) % 95);
+    ctx.strokeStyle = `rgba(${v},${v},${v},0.28)`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + len, y);
+    ctx.stroke();
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(3, 3);
+  return tex;
+}
+
+function createMaterialPalette(brushedMap) {
+  return {
+    brushedSteel: new THREE.MeshPhysicalMaterial({
+      color: 0xe8edf3,
+      metalness: 0.98,
+      roughness: 0.26,
+      roughnessMap: brushedMap,
+      bumpMap: brushedMap,
+      bumpScale: 0.0045,
+      clearcoat: 0.25,
+      clearcoatRoughness: 0.18,
+      envMapIntensity: 2.15
+    }),
+    mirrorSteel: new THREE.MeshPhysicalMaterial({
+      color: 0xf7f9fc,
+      metalness: 1.0,
+      roughness: 0.07,
+      clearcoat: 0.45,
+      clearcoatRoughness: 0.08,
+      envMapIntensity: 2.45
+    }),
+    darkSteel: new THREE.MeshPhysicalMaterial({
+      color: 0x7c838e,
+      metalness: 0.95,
+      roughness: 0.3,
+      roughnessMap: brushedMap,
+      bumpMap: brushedMap,
+      bumpScale: 0.003,
+      envMapIntensity: 1.7
+    }),
+    temperedGlass: new THREE.MeshPhysicalMaterial({
+      color: 0xd9ecea,
+      metalness: 0.12,
+      roughness: 0.04,
+      transparent: true,
+      opacity: 0.32,
+      reflectivity: 1.0,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.04,
+      envMapIntensity: 2.2,
+      side: THREE.DoubleSide
+    }),
+    glassEdgeBalustrade: new THREE.MeshPhysicalMaterial({
+      color: 0xd0e2e4,
+      metalness: 0.08,
+      roughness: 0.05,
+      transparent: true,
+      opacity: 0.18,
+      clearcoat: 0.9,
+      envMapIntensity: 1.8,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    }),
+    wirePrimary: new THREE.LineBasicMaterial({
+      color: 0xe2e5eb,
+      transparent: true,
+      opacity: 0.72
+    }),
+    wireSecondary: new THREE.LineBasicMaterial({
+      color: 0x737986,
+      transparent: true,
+      opacity: 0.44
+    })
+  };
+}
+
+/**
+ * Base común para escenas 3D arquitectónicas sincronizadas con scroll y viewport.
+ */
+class BaseScrollStage3D {
   constructor(canvas, options = {}) {
     this.canvas = canvas;
     this.options = {
       mode: options.mode || "finished",
-      steps: options.steps || 20,
-      sweepAngle: options.sweepAngle || Math.PI * 1.48,
       baseAngle: options.baseAngle ?? -0.85,
-      scrollTurns: options.scrollTurns ?? 1.15,
-      cameraXOffset: options.cameraXOffset ?? -0.55,
-      cameraYOffset: options.cameraYOffset ?? 0.25,
-      cameraDistance: options.cameraDistance ?? 7.8,
+      scrollTurns: options.scrollTurns ?? 1.0,
+      cameraXOffset: options.cameraXOffset ?? 0,
+      cameraYOffset: options.cameraYOffset ?? 0.2,
+      cameraDistance: options.cameraDistance ?? 8.2,
       scale: options.scale ?? 1.0,
+      basePitch: options.basePitch ?? 0.08,
       reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
       ...options
     };
 
     this.mode = this.options.mode;
-    this.scrollProgress = 0;
     this.currentAngle = this.options.baseAngle;
     this.targetAngle = this.options.baseAngle;
     this.pointerX = 0;
@@ -55,18 +214,15 @@ export class HelicalStaircase3D {
 
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.08;
+    this.renderer.toneMappingExposure = 1.15;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.scene = new THREE.Scene();
-
-    // Estudio metálico PBR monocromo con reflejos suaves de acero cepillado
-    const pmrem = new THREE.PMREMGenerator(this.renderer);
-    const roomEnv = new RoomEnvironment();
-    this.envRT = pmrem.fromScene(roomEnv, 0.04);
+    this.envRT = createStainlessStudioEnv(this.renderer);
     this.scene.environment = this.envRT.texture;
-    roomEnv.dispose();
-    pmrem.dispose();
+
+    this.brushedMap = createBrushedSteelMap();
+    this.mats = createMaterialPalette(this.brushedMap);
 
     const width = Math.max(1, this.canvas.clientWidth || 800);
     const height = Math.max(1, this.canvas.clientHeight || 600);
@@ -76,10 +232,20 @@ export class HelicalStaircase3D {
       this.options.cameraYOffset,
       this.options.cameraDistance
     );
-    this.camera.lookAt(this.options.cameraXOffset * 0.45, 0.0, 0);
+    this.camera.lookAt(this.options.cameraXOffset * 0.45, 0, 0);
 
     this._setupLights();
-    this._buildStaircase();
+
+    this.rootGroup = new THREE.Group();
+    this.rootGroup.scale.setScalar(this.options.scale);
+    this.scene.add(this.rootGroup);
+
+    this.wireframeGroup = new THREE.Group();
+    this.steelGroup = new THREE.Group();
+    this.finishedGroup = new THREE.Group();
+    this.rootGroup.add(this.steelGroup, this.finishedGroup, this.wireframeGroup);
+
+    this._buildGeometry();
     this.setMode(this.mode);
     this.resize();
 
@@ -103,294 +269,23 @@ export class HelicalStaircase3D {
   }
 
   _setupLights() {
-    // Luz cenital de atrio oscuro + contra-luz cálida de taller para perfilar aristas
-    const ambient = new THREE.AmbientLight(0xd8dde6, 0.35);
-    this.scene.add(ambient);
+    this.scene.add(new THREE.AmbientLight(0xd9e0ea, 0.25));
 
-    const keyLight = new THREE.DirectionalLight(0xfff5e8, 2.8);
-    keyLight.position.set(4.5, 7.2, 5.4);
-    this.scene.add(keyLight);
+    const key = new THREE.DirectionalLight(0xffffff, 3.2);
+    key.position.set(5.5, 8.0, 5.5);
+    this.scene.add(key);
 
-    const rimLight = new THREE.DirectionalLight(0xcdd7e6, 2.2);
-    rimLight.position.set(-6.0, 3.0, -4.5);
-    this.scene.add(rimLight);
+    const coolRim = new THREE.DirectionalLight(0xd8e4f2, 2.4);
+    coolRim.position.set(-6.5, 3.5, -5.0);
+    this.scene.add(coolRim);
 
-    const underFill = new THREE.PointLight(0xffffff, 1.1, 16);
-    underFill.position.set(1.2, -3.5, 3.2);
-    this.scene.add(underFill);
+    const kick = new THREE.DirectionalLight(0xffffff, 1.4);
+    kick.position.set(0.5, -5.0, 4.5);
+    this.scene.add(kick);
   }
 
-  _createHelicalRibbonGeometry(radius, height, sweep, width, depth, segments = 96, yOffset = 0) {
-    const geom = new THREE.BufferGeometry();
-    const positions = [];
-    const normals = [];
-    const indices = [];
-
-    const hw = width / 2;
-    const hd = depth / 2;
-    const cross = [
-      [-hw, -hd],
-      [hw, -hd],
-      [hw, hd],
-      [-hw, hd]
-    ];
-
-    // Cada cara de la viga con sus propias normales para brillos metálicos limpios
-    for (let face = 0; face < 4; face++) {
-      const [ax, ay] = cross[face];
-      const [bx, by] = cross[(face + 1) % 4];
-      const baseVertex = positions.length / 3;
-
-      for (let i = 0; i <= segments; i++) {
-        const t = i / segments;
-        const theta = t * sweep;
-        const y = (t - 0.5) * height + yOffset;
-        const cos = Math.cos(theta);
-        const sin = Math.sin(theta);
-
-        const pushPt = (ox, oy) => {
-          const r = radius + ox;
-          positions.push(r * cos, y + oy, r * sin);
-        };
-
-        pushPt(ax, ay);
-        pushPt(bx, by);
-
-        // Normal aproximada perpendicular en sección radial/vertical
-        const nx = by - ay;
-        const ny = -(bx - ax);
-        const nLen = Math.hypot(nx, ny) || 1;
-        const rNorm = nx / nLen;
-        const yNorm = ny / nLen;
-
-        normals.push(rNorm * cos, yNorm, rNorm * sin);
-        normals.push(rNorm * cos, yNorm, rNorm * sin);
-      }
-
-      for (let i = 0; i < segments; i++) {
-        const a = baseVertex + i * 2;
-        const b = a + 1;
-        const c = a + 2;
-        const d = a + 3;
-        indices.push(a, b, d, a, d, c);
-      }
-    }
-
-    geom.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-    geom.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
-    geom.setIndex(indices);
-    return geom;
-  }
-
-  _createSectorTreadGeometry(innerR, outerR, angleWidth, thickness = 0.048) {
-    const shape = new THREE.Shape();
-    const half = angleWidth / 2;
-    const segs = 10;
-
-    for (let i = 0; i <= segs; i++) {
-      const a = -half + (i / segs) * angleWidth;
-      const x = outerR * Math.cos(a);
-      const y = outerR * Math.sin(a);
-      if (i === 0) shape.moveTo(x, y);
-      else shape.lineTo(x, y);
-    }
-    for (let i = segs; i >= 0; i--) {
-      const a = -half + (i / segs) * angleWidth;
-      shape.lineTo(innerR * Math.cos(a), innerR * Math.sin(a));
-    }
-    shape.closePath();
-
-    const extrude = new THREE.ExtrudeGeometry(shape, {
-      depth: thickness,
-      bevelEnabled: true,
-      bevelSegments: 2,
-      steps: 1,
-      bevelSize: 0.006,
-      bevelThickness: 0.006
-    });
-    extrude.rotateX(-Math.PI / 2);
-    extrude.translate(0, -thickness / 2, 0);
-    return extrude;
-  }
-
-  _createHelixCurve(radius, height, sweep, yOffset = 0, pointsCount = 96) {
-    const pts = [];
-    for (let i = 0; i <= pointsCount; i++) {
-      const t = i / pointsCount;
-      const theta = t * sweep;
-      const y = (t - 0.5) * height + yOffset;
-      pts.push(new THREE.Vector3(radius * Math.cos(theta), y, radius * Math.sin(theta)));
-    }
-    return new THREE.CatmullRomCurve3(pts);
-  }
-
-  _buildStaircase() {
-    this.rootGroup = new THREE.Group();
-    this.rootGroup.scale.setScalar(this.options.scale);
-    this.scene.add(this.rootGroup);
-
-    this.finishedGroup = new THREE.Group();
-    this.steelGroup = new THREE.Group();
-    this.wireframeGroup = new THREE.Group();
-
-    this.rootGroup.add(this.steelGroup);
-    this.rootGroup.add(this.finishedGroup);
-    this.rootGroup.add(this.wireframeGroup);
-
-    const R_IN = 1.05;
-    const R_OUT = 2.48;
-    const HEIGHT = 5.4;
-    const SWEEP = this.options.sweepAngle;
-    const STEPS = this.options.steps;
-
-    // Materiales reales Ferrari / Taller de autor
-    const brushedSteelMat = new THREE.MeshPhysicalMaterial({
-      color: 0xd4d8df,
-      metalness: 0.94,
-      roughness: 0.24,
-      clearcoat: 0.15,
-      clearcoatRoughness: 0.35,
-      envMapIntensity: 1.55
-    });
-
-    const darkSteelShadowMat = new THREE.MeshPhysicalMaterial({
-      color: 0x3b3f47,
-      metalness: 0.88,
-      roughness: 0.34,
-      envMapIntensity: 1.25
-    });
-
-    const polishedRailMat = new THREE.MeshPhysicalMaterial({
-      color: 0xeff2f6,
-      metalness: 0.98,
-      roughness: 0.12,
-      clearcoat: 0.4,
-      envMapIntensity: 1.7
-    });
-
-    const glassTreadMat = new THREE.MeshPhysicalMaterial({
-      color: 0xd9e6ea,
-      metalness: 0.08,
-      roughness: 0.07,
-      transparent: true,
-      opacity: 0.42,
-      reflectivity: 0.9,
-      envMapIntensity: 1.65,
-      side: THREE.DoubleSide
-    });
-
-    const glassBalustradeMat = new THREE.MeshPhysicalMaterial({
-      color: 0xcfdbe0,
-      metalness: 0.05,
-      roughness: 0.06,
-      transparent: true,
-      opacity: 0.22,
-      envMapIntensity: 1.4,
-      side: THREE.DoubleSide,
-      depthWrite: false
-    });
-
-    const wireLineMat = new THREE.LineBasicMaterial({
-      color: 0xd8dce4,
-      transparent: true,
-      opacity: 0.68
-    });
-
-    const wireSubMat = new THREE.LineBasicMaterial({
-      color: 0x6f7582,
-      transparent: true,
-      opacity: 0.42
-    });
-
-    // 1. Zancas metálicas helicoidales (interior y exterior)
-    const outerStringerGeom = this._createHelicalRibbonGeometry(R_OUT, HEIGHT, SWEEP, 0.09, 0.42, 110, 0);
-    const innerStringerGeom = this._createHelicalRibbonGeometry(R_IN, HEIGHT, SWEEP, 0.08, 0.38, 110, 0);
-
-    const outerStringer = new THREE.Mesh(outerStringerGeom, brushedSteelMat);
-    const innerStringer = new THREE.Mesh(innerStringerGeom, darkSteelShadowMat);
-    this.steelGroup.add(outerStringer, innerStringer);
-
-    // 2. Pasamanos tubulares continuos en acero inoxidable pulido
-    const outerRailCurve = this._createHelixCurve(R_OUT, HEIGHT, SWEEP, 1.06, 96);
-    const innerRailCurve = this._createHelixCurve(R_IN, HEIGHT, SWEEP, 1.04, 96);
-    const outerRail = new THREE.Mesh(new THREE.TubeGeometry(outerRailCurve, 96, 0.036, 14, false), polishedRailMat);
-    const innerRail = new THREE.Mesh(new THREE.TubeGeometry(innerRailCurve, 96, 0.032, 12, false), brushedSteelMat);
-    this.steelGroup.add(outerRail, innerRail);
-
-    // 3. Montantes verticales de arranque y remate + cartelas metálicas bajo peldaños
-    const stepAngle = SWEEP / STEPS;
-    const treadGeom = this._createSectorTreadGeometry(R_IN + 0.05, R_OUT - 0.05, stepAngle * 0.94, 0.048);
-    const cleatGeom = new THREE.BoxGeometry(R_OUT - R_IN - 0.04, 0.042, 0.065);
-    const pinGeom = new THREE.CylinderGeometry(0.02, 0.02, 1.04, 8);
-
-    for (let i = 0; i < STEPS; i++) {
-      const t = (i + 0.5) / STEPS;
-      const theta = t * SWEEP;
-      const y = (t - 0.5) * HEIGHT;
-
-      // Soporte metálico soldado en acero (visible en fase taller y acabada)
-      const cleat = new THREE.Mesh(cleatGeom, brushedSteelMat);
-      const midR = (R_IN + R_OUT) / 2;
-      cleat.position.set(midR * Math.cos(theta), y - 0.038, midR * Math.sin(theta));
-      cleat.rotation.y = -theta;
-      this.steelGroup.add(cleat);
-
-      // Botones / fijaciones puntuales de vidrio en zancas
-      if (i % 2 === 0 || i === STEPS - 1) {
-        const postOut = new THREE.Mesh(pinGeom, brushedSteelMat);
-        postOut.position.set(R_OUT * Math.cos(theta), y + 0.54, R_OUT * Math.sin(theta));
-        this.steelGroup.add(postOut);
-      }
-
-      // Peldaño de vidrio templado laminado
-      const tread = new THREE.Mesh(treadGeom, glassTreadMat);
-      tread.position.set(0, y, 0);
-      tread.rotation.y = -theta;
-      this.finishedGroup.add(tread);
-
-      // Perfil de wireframe técnico monocromo (Fase 01)
-      const wireEdges = new THREE.EdgesGeometry(treadGeom, 25);
-      const wireTread = new THREE.LineSegments(wireEdges, wireLineMat);
-      wireTread.position.set(0, y, 0);
-      wireTread.rotation.y = -theta;
-      this.wireframeGroup.add(wireTread);
-    }
-
-    // 4. Barandilla continua de vidrio laminado curvo
-    const outerGlassGeom = this._createHelicalRibbonGeometry(R_OUT, HEIGHT, SWEEP, 0.022, 0.86, 96, 0.61);
-    const innerGlassGeom = this._createHelicalRibbonGeometry(R_IN, HEIGHT, SWEEP, 0.02, 0.84, 96, 0.59);
-    const outerGlass = new THREE.Mesh(outerGlassGeom, glassBalustradeMat);
-    const innerGlass = new THREE.Mesh(innerGlassGeom, glassBalustradeMat);
-    this.finishedGroup.add(outerGlass, innerGlass);
-
-    // 5. Elementos de estudio técnico / plano CAD (Fase 01 monocromo arquitectónico)
-    const wireOuter = new THREE.LineSegments(new THREE.EdgesGeometry(outerStringerGeom, 22), wireLineMat);
-    const wireInner = new THREE.LineSegments(new THREE.EdgesGeometry(innerStringerGeom, 22), wireSubMat);
-    const wireRailOut = new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints(outerRailCurve.getPoints(96)),
-      wireLineMat
-    );
-    const wireRailIn = new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints(innerRailCurve.getPoints(96)),
-      wireSubMat
-    );
-
-    // Anillos concéntricos de replanteo en planta (sin color neón)
-    const ringPts = [];
-    for (let i = 0; i <= 72; i++) {
-      const a = (i / 72) * Math.PI * 2;
-      ringPts.push(new THREE.Vector3(R_OUT * Math.cos(a), -HEIGHT / 2 - 0.15, R_OUT * Math.sin(a)));
-    }
-    const baseRing = new THREE.Line(new THREE.BufferGeometry().setFromPoints(ringPts), wireSubMat);
-
-    // Eje vertical central de replanteo
-    const axisGeom = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(0, -HEIGHT / 2 - 0.35, 0),
-      new THREE.Vector3(0, HEIGHT / 2 + 1.15, 0)
-    ]);
-    const axisLine = new THREE.Line(axisGeom, wireSubMat);
-
-    this.wireframeGroup.add(wireOuter, wireInner, wireRailOut, wireRailIn, baseRing, axisLine);
+  _buildGeometry() {
+    // Implementado por subclases
   }
 
   setMode(mode) {
@@ -416,8 +311,6 @@ export class HelicalStaircase3D {
 
   setScrollProgress(progress) {
     const clamped = Math.max(0, Math.min(1, progress));
-    this.scrollProgress = clamped;
-
     if (this.options.reducedMotion) {
       this.targetAngle = this.options.baseAngle;
       this.needsRender = true;
@@ -467,7 +360,7 @@ export class HelicalStaircase3D {
     this.currentTiltY += dTiltY * 0.12;
 
     this.rootGroup.rotation.y = this.currentAngle + this.currentTiltX;
-    this.rootGroup.rotation.x = 0.08 + this.currentTiltY;
+    this.rootGroup.rotation.x = this.options.basePitch + this.currentTiltY;
 
     if (this.isVisible) {
       this.renderer.render(this.scene, this.camera);
@@ -495,6 +388,376 @@ export class HelicalStaircase3D {
     window.removeEventListener("resize", this._onResize);
     if (this._observer) this._observer.disconnect();
     if (this.envRT) this.envRT.dispose();
+    if (this.brushedMap) this.brushedMap.dispose();
     if (this.renderer) this.renderer.dispose();
+  }
+}
+
+/**
+ * 1. ESCALERA HELICOIDAL 3D EN ACERO INOXIDABLE Y VIDRIO (Hero Portada)
+ */
+export class HelicalStaircase3D extends BaseScrollStage3D {
+  _createHelicalRibbonGeometry(radius, height, sweep, width, depth, segments = 110, yOffset = 0) {
+    const geom = new THREE.BufferGeometry();
+    const positions = [];
+    const normals = [];
+    const uvs = [];
+    const indices = [];
+
+    const hw = width / 2;
+    const hd = depth / 2;
+    const cross = [
+      [-hw, -hd],
+      [hw, -hd],
+      [hw, hd],
+      [-hw, hd]
+    ];
+
+    for (let face = 0; face < 4; face++) {
+      const [ax, ay] = cross[face];
+      const [bx, by] = cross[(face + 1) % 4];
+      const baseVertex = positions.length / 3;
+
+      for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const theta = t * sweep;
+        const y = (t - 0.5) * height + yOffset;
+        const cos = Math.cos(theta);
+        const sin = Math.sin(theta);
+
+        positions.push((radius + ax) * cos, y + ay, (radius + ax) * sin);
+        positions.push((radius + bx) * cos, y + by, (radius + bx) * sin);
+
+        const nx = by - ay;
+        const ny = -(bx - ax);
+        const nLen = Math.hypot(nx, ny) || 1;
+        normals.push((nx / nLen) * cos, ny / nLen, (nx / nLen) * sin);
+        normals.push((nx / nLen) * cos, ny / nLen, (nx / nLen) * sin);
+
+        uvs.push(t * 6, 0, t * 6, 1);
+      }
+
+      for (let i = 0; i < segments; i++) {
+        const a = baseVertex + i * 2;
+        indices.push(a, a + 1, a + 3, a, a + 3, a + 2);
+      }
+    }
+
+    geom.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
+    geom.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+    geom.setIndex(indices);
+    return geom;
+  }
+
+  _createSectorTreadGeometry(innerR, outerR, angleWidth, thickness = 0.048) {
+    const shape = new THREE.Shape();
+    const half = angleWidth / 2;
+    const segs = 10;
+
+    for (let i = 0; i <= segs; i++) {
+      const a = -half + (i / segs) * angleWidth;
+      const x = outerR * Math.cos(a);
+      const y = outerR * Math.sin(a);
+      if (i === 0) shape.moveTo(x, y);
+      else shape.lineTo(x, y);
+    }
+    for (let i = segs; i >= 0; i--) {
+      const a = -half + (i / segs) * angleWidth;
+      shape.lineTo(innerR * Math.cos(a), innerR * Math.sin(a));
+    }
+    shape.closePath();
+
+    const extrude = new THREE.ExtrudeGeometry(shape, {
+      depth: thickness,
+      bevelEnabled: true,
+      bevelSegments: 2,
+      steps: 1,
+      bevelSize: 0.005,
+      bevelThickness: 0.005
+    });
+    extrude.rotateX(-Math.PI / 2);
+    extrude.translate(0, -thickness / 2, 0);
+    return extrude;
+  }
+
+  _createHelixCurve(radius, height, sweep, yOffset = 0, pointsCount = 96) {
+    const pts = [];
+    for (let i = 0; i <= pointsCount; i++) {
+      const t = i / pointsCount;
+      const theta = t * sweep;
+      const y = (t - 0.5) * height + yOffset;
+      pts.push(new THREE.Vector3(radius * Math.cos(theta), y, radius * Math.sin(theta)));
+    }
+    return new THREE.CatmullRomCurve3(pts);
+  }
+
+  _buildGeometry() {
+    const R_IN = 1.05;
+    const R_OUT = 2.48;
+    const HEIGHT = 5.4;
+    const SWEEP = this.options.sweepAngle || Math.PI * 1.48;
+    const STEPS = this.options.steps || 20;
+
+    // Zancas principales de acero inoxidable cepillado + pletinas espejo de remate
+    const outerStringerGeom = this._createHelicalRibbonGeometry(R_OUT, HEIGHT, SWEEP, 0.095, 0.44, 110, 0);
+    const innerStringerGeom = this._createHelicalRibbonGeometry(R_IN, HEIGHT, SWEEP, 0.085, 0.4, 110, 0);
+    const outerTrimGeom = this._createHelicalRibbonGeometry(R_OUT + 0.048, HEIGHT, SWEEP, 0.014, 0.08, 110, 0.21);
+
+    this.steelGroup.add(
+      new THREE.Mesh(outerStringerGeom, this.mats.brushedSteel),
+      new THREE.Mesh(innerStringerGeom, this.mats.darkSteel),
+      new THREE.Mesh(outerTrimGeom, this.mats.mirrorSteel)
+    );
+
+    // Pasamanos tubulares Ø50mm y varillas tensoras horizontales en espejo inox
+    const outerRailCurve = this._createHelixCurve(R_OUT, HEIGHT, SWEEP, 1.08, 96);
+    const innerRailCurve = this._createHelixCurve(R_IN, HEIGHT, SWEEP, 1.06, 96);
+    const midBar1 = this._createHelixCurve(R_OUT + 0.01, HEIGHT, SWEEP, 0.55, 84);
+    const midBar2 = this._createHelixCurve(R_OUT + 0.01, HEIGHT, SWEEP, 0.81, 84);
+
+    this.steelGroup.add(
+      new THREE.Mesh(new THREE.TubeGeometry(outerRailCurve, 96, 0.038, 16, false), this.mats.mirrorSteel),
+      new THREE.Mesh(new THREE.TubeGeometry(innerRailCurve, 96, 0.034, 14, false), this.mats.brushedSteel),
+      new THREE.Mesh(new THREE.TubeGeometry(midBar1, 84, 0.011, 8, false), this.mats.mirrorSteel),
+      new THREE.Mesh(new THREE.TubeGeometry(midBar2, 84, 0.011, 8, false), this.mats.mirrorSteel)
+    );
+
+    // Cartelas de apoyo, montantes pulidos, botones punto-vidrio y peldaños laminados
+    const stepAngle = SWEEP / STEPS;
+    const treadGeom = this._createSectorTreadGeometry(R_IN + 0.05, R_OUT - 0.05, stepAngle * 0.94, 0.048);
+    const cleatGeom = new THREE.BoxGeometry(R_OUT - R_IN - 0.04, 0.044, 0.072);
+    const postGeom = new THREE.CylinderGeometry(0.022, 0.022, 1.06, 12);
+    const pinHeadGeom = new THREE.CylinderGeometry(0.028, 0.028, 0.03, 12);
+    pinHeadGeom.rotateZ(Math.PI / 2);
+
+    for (let i = 0; i < STEPS; i++) {
+      const t = (i + 0.5) / STEPS;
+      const theta = t * SWEEP;
+      const y = (t - 0.5) * HEIGHT;
+
+      const cleat = new THREE.Mesh(cleatGeom, this.mats.brushedSteel);
+      const midR = (R_IN + R_OUT) / 2;
+      cleat.position.set(midR * Math.cos(theta), y - 0.04, midR * Math.sin(theta));
+      cleat.rotation.y = -theta;
+      this.steelGroup.add(cleat);
+
+      // Fijaciones puntuales espejo exteriores a lo largo de la zanca
+      const pin = new THREE.Mesh(pinHeadGeom, this.mats.mirrorSteel);
+      pin.position.set((R_OUT + 0.055) * Math.cos(theta), y - 0.02, (R_OUT + 0.055) * Math.sin(theta));
+      pin.rotation.y = -theta;
+      this.steelGroup.add(pin);
+
+      if (i % 2 === 0 || i === STEPS - 1) {
+        const post = new THREE.Mesh(postGeom, this.mats.mirrorSteel);
+        post.position.set(R_OUT * Math.cos(theta), y + 0.55, R_OUT * Math.sin(theta));
+        this.steelGroup.add(post);
+      }
+
+      const tread = new THREE.Mesh(treadGeom, this.mats.temperedGlass);
+      tread.position.set(0, y, 0);
+      tread.rotation.y = -theta;
+      this.finishedGroup.add(tread);
+    }
+
+    const outerGlassGeom = this._createHelicalRibbonGeometry(R_OUT, HEIGHT, SWEEP, 0.02, 0.84, 96, 0.62);
+    const innerGlassGeom = this._createHelicalRibbonGeometry(R_IN, HEIGHT, SWEEP, 0.02, 0.82, 96, 0.6);
+    this.finishedGroup.add(
+      new THREE.Mesh(outerGlassGeom, this.mats.glassEdgeBalustrade),
+      new THREE.Mesh(innerGlassGeom, this.mats.glassEdgeBalustrade)
+    );
+  }
+}
+
+/**
+ * 2. MARQUESINA ARQUITECTÓNICA VOLADA EN ACERO INOXIDABLE Y VIDRIO (Scrollytelling)
+ * Elemento distinto al Hero: costillas curvadas aligeradas, tirantes tensores y cubierta de vidrio.
+ */
+export class CanopyStructure3D extends BaseScrollStage3D {
+  constructor(canvas, options = {}) {
+    super(canvas, {
+      baseAngle: options.baseAngle ?? -0.58,
+      scrollTurns: options.scrollTurns ?? 0.68,
+      cameraXOffset: options.cameraXOffset ?? 0,
+      cameraYOffset: options.cameraYOffset ?? 0.45,
+      cameraDistance: options.cameraDistance ?? 8.9,
+      basePitch: options.basePitch ?? 0.14,
+      scale: options.scale ?? 0.94,
+      ...options
+    });
+  }
+
+  _createCurvedCantileverRibGeometry() {
+    const shape = new THREE.Shape();
+    // Costilla volada desde muro trasero (x=0) hasta vuelo delantero (x=3.1)
+    shape.moveTo(0, -0.52);
+    shape.lineTo(0.18, -0.52);
+    shape.bezierCurveTo(0.85, -0.44, 2.05, -0.18, 3.15, -0.05);
+    shape.lineTo(3.15, 0.06);
+    shape.bezierCurveTo(2.1, 0.14, 1.0, 0.18, 0, 0.18);
+    shape.closePath();
+
+    // Tres aligeramientos circulares mecanizados en el alma de la costilla
+    const holeCenters = [
+      [0.52, -0.14, 0.14],
+      [1.18, -0.09, 0.1],
+      [1.82, -0.04, 0.065]
+    ];
+    for (const [cx, cy, r] of holeCenters) {
+      const hole = new THREE.Path();
+      hole.absarc(cx, cy, r, 0, Math.PI * 2, true);
+      shape.holes.push(hole);
+    }
+
+    const geom = new THREE.ExtrudeGeometry(shape, {
+      depth: 0.06,
+      bevelEnabled: true,
+      bevelSegments: 2,
+      steps: 1,
+      bevelSize: 0.006,
+      bevelThickness: 0.006
+    });
+    geom.translate(-1.35, 0, -0.03);
+    return geom;
+  }
+
+  _addWireMesh(geom, primary = true) {
+    const edges = new THREE.EdgesGeometry(geom, 24);
+    const segs = new THREE.LineSegments(edges, primary ? this.mats.wirePrimary : this.mats.wireSecondary);
+    return segs;
+  }
+
+  _buildGeometry() {
+    const ribZs = [-2.25, -0.75, 0.75, 2.25];
+    const ribGeom = this._createCurvedCantileverRibGeometry();
+
+    // 1. Pórtico trasero y viga maestra de anclaje en AISI 316L
+    const spineBeamGeom = new THREE.BoxGeometry(0.16, 0.24, 5.1);
+    const spineBeam = new THREE.Mesh(spineBeamGeom, this.mats.brushedSteel);
+    spineBeam.position.set(-1.35, -0.16, 0);
+    this.steelGroup.add(spineBeam);
+
+    const wSpine = this._addWireMesh(spineBeamGeom, true);
+    wSpine.position.copy(spineBeam.position);
+    this.wireframeGroup.add(wSpine);
+
+    // Dos pilares verticales de soporte muro / pórtico
+    const colGeom = new THREE.BoxGeometry(0.18, 2.55, 0.18);
+    for (const zPos of [-2.25, 2.25]) {
+      const col = new THREE.Mesh(colGeom, this.mats.darkSteel);
+      col.position.set(-1.38, -0.12, zPos);
+      this.steelGroup.add(col);
+
+      const wCol = this._addWireMesh(colGeom, false);
+      wCol.position.copy(col.position);
+      this.wireframeGroup.add(wCol);
+    }
+
+    // Placa de anclaje superior para tirantes
+    const anchorPlateGeom = new THREE.BoxGeometry(0.08, 0.16, 0.24);
+    const rodPinGeom = new THREE.CylinderGeometry(0.028, 0.028, 0.12, 12);
+    rodPinGeom.rotateX(Math.PI / 2);
+
+    // 2. 4 Costillas curvadas aligeradas + 4 tirantes tensores en acero pulido
+    for (const zPos of ribZs) {
+      const rib = new THREE.Mesh(ribGeom, this.mats.brushedSteel);
+      rib.position.set(0, 0, zPos);
+      this.steelGroup.add(rib);
+
+      const wRib = this._addWireMesh(ribGeom, true);
+      wRib.position.copy(rib.position);
+      this.wireframeGroup.add(wRib);
+
+      // Cartela superior de anclaje en pilar/fachada
+      const plate = new THREE.Mesh(anchorPlateGeom, this.mats.mirrorSteel);
+      plate.position.set(-1.33, 1.04, zPos);
+      this.steelGroup.add(plate);
+
+      // Tirante tensor inclinado desde y=1.04, x=-1.30 hasta punta delantera x=1.45, y=0.04
+      const startPt = new THREE.Vector3(-1.3, 1.04, zPos);
+      const endPt = new THREE.Vector3(1.42, 0.06, zPos);
+      const rodVec = new THREE.Vector3().subVectors(endPt, startPt);
+      const rodLen = rodVec.length();
+      const rodGeom = new THREE.CylinderGeometry(0.017, 0.017, rodLen, 12);
+      const rodMesh = new THREE.Mesh(rodGeom, this.mats.mirrorSteel);
+      rodMesh.position.copy(startPt).addScaledVector(rodVec, 0.5);
+      rodMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), rodVec.clone().normalize());
+      this.steelGroup.add(rodMesh);
+
+      // Tensor / horquilla mecanizada en mitad del tirante
+      const turnbuckleGeom = new THREE.CylinderGeometry(0.032, 0.032, 0.22, 12);
+      const tbMesh = new THREE.Mesh(turnbuckleGeom, this.mats.mirrorSteel);
+      tbMesh.position.copy(startPt).addScaledVector(rodVec, 0.84);
+      tbMesh.quaternion.copy(rodMesh.quaternion);
+      this.steelGroup.add(tbMesh);
+
+      const pinFront = new THREE.Mesh(rodPinGeom, this.mats.mirrorSteel);
+      pinFront.position.copy(endPt);
+      this.steelGroup.add(pinFront);
+
+      // Línea CAD del tirante
+      const wRod = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([startPt, endPt]),
+        this.mats.wirePrimary
+      );
+      this.wireframeGroup.add(wRod);
+    }
+
+    // 3. Correas tubulares transversales y botones puntuales (arañas) de soporte de vidrio
+    const purlinXs = [-0.95, 0.15, 1.32];
+    const purlinGeom = new THREE.CylinderGeometry(0.026, 0.026, 4.9, 14);
+    purlinGeom.rotateX(Math.PI / 2);
+
+    const standoffGeom = new THREE.CylinderGeometry(0.032, 0.022, 0.08, 12);
+
+    for (let i = 0; i < purlinXs.length; i++) {
+      const px = purlinXs[i];
+      const py = 0.2 - i * 0.055;
+      const purlin = new THREE.Mesh(purlinGeom, this.mats.mirrorSteel);
+      purlin.position.set(px, py, 0);
+      this.steelGroup.add(purlin);
+
+      const wPurlin = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(px, py, -2.45),
+          new THREE.Vector3(px, py, 2.45)
+        ]),
+        this.mats.wireSecondary
+      );
+      this.wireframeGroup.add(wPurlin);
+
+      for (const zPos of ribZs) {
+        const standoff = new THREE.Mesh(standoffGeom, this.mats.mirrorSteel);
+        standoff.position.set(px, py + 0.04, zPos);
+        this.steelGroup.add(standoff);
+      }
+    }
+
+    // 4. Paños de vidrio laminado templado de cubierta (Fase III / Acabada)
+    const panelGeom = new THREE.BoxGeometry(3.26, 0.034, 1.46);
+    const panelZs = [-1.5, 0, 1.5];
+    for (const pz of panelZs) {
+      const glassPanel = new THREE.Mesh(panelGeom, this.mats.temperedGlass);
+      glassPanel.position.set(0.24, 0.22, pz);
+      glassPanel.rotation.z = -0.055;
+      this.finishedGroup.add(glassPanel);
+
+      const wPanel = this._addWireMesh(panelGeom, false);
+      wPanel.position.copy(glassPanel.position);
+      wPanel.rotation.copy(glassPanel.rotation);
+      this.wireframeGroup.add(wPanel);
+    }
+
+    // Marco perimetral CAD de replanteo en planta
+    const baseFrame = new THREE.LineLoop(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-1.55, -0.58, -2.55),
+        new THREE.Vector3(1.9, -0.58, -2.55),
+        new THREE.Vector3(1.9, -0.58, 2.55),
+        new THREE.Vector3(-1.55, -0.58, 2.55)
+      ]),
+      this.mats.wireSecondary
+    );
+    this.wireframeGroup.add(baseFrame);
   }
 }
