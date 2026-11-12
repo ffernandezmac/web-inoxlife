@@ -1,74 +1,66 @@
 :root {
-  /* Paleta Propuesta 1: Ingeniería Arquitectónica Clara + Banda Industrial Nivel 3 */
-  --bg: #ffffff;
-  --bg-soft: #f6f7f9;
-  --bg-elevated: #eceff4;
-  --bg-glass: rgba(255, 255, 255, 0.84);
+  /* Propuesta 2: Taller de Autor & Escala Monumental (Ferrari / Bugatti monochrome) */
+  --bg: #141414;
+  --bg-hero: #181818;
+  --bg-elevated: #1c1c1e;
+  --bg-card: #202023;
+  --bg-glass: rgba(20, 20, 20, 0.88);
 
-  /* Atmósfera industrial oscura (Nivel 3 Scrollytelling) */
-  --bg-dark: #141a21;
-  --bg-dark-soft: #1b232d;
-  --bg-dark-card: #212b37;
+  /* Zona de contraste blanca de cierre */
+  --light-bg: #ffffff;
+  --light-soft: #f6f6f7;
+  --light-ink: #141414;
+  --light-body: #33353b;
+  --light-muted: #5b5e67;
+  --light-hairline: #dfe1e6;
 
-  /* Tinta y jerarquía de texto */
-  --ink: #18191b;
-  --ink-body: #393d45;
-  --ink-muted: #666c78;
-  --ink-faint: #b6bcc8;
+  /* Tinta monocroma sobre oscuro */
+  --ink: #ffffff;
+  --ink-body: #d4d6dc;
+  --ink-muted: #9397a1;
+  --ink-dim: #52555e;
 
-  --ink-on-dark: #f7f8fa;
-  --ink-body-dark: #c9d0dc;
-  --ink-muted-dark: #8e98a8;
+  /* Acero cepillado y contraste puro */
+  --steel-sheen: #e2e5eb;
+  --focus-dark: #ffffff;
+  --focus-light: #141414;
 
-  /* Acento único de acción (Azul acero corporativo) */
-  --accent: #1c69d4;
-  --accent-hover: #1553aa;
-  --accent-soft: rgba(28, 105, 212, 0.09);
-  --accent-cyan: #38bdf8;
+  /* Estados de validación claros sobre blanco */
+  --danger: #b42318;
+  --danger-bg: #fef3f2;
+  --success: #166534;
+  --success-bg: #f0fdf4;
 
-  /* Estados semánticos */
-  --danger: #c92a2a;
-  --danger-bg: #fff5f5;
-  --success: #1b7f4b;
-  --success-bg: #eefbf3;
+  /* Líneas y geometría arquitectónica 0px */
+  --hairline: #28282c;
+  --hairline-strong: #3e3e44;
+  --input-border: #6d7078;
+  --radius-none: 0px;
 
-  /* Líneas y bordes */
-  --hairline: #e3e6ec;
-  --hairline-strong: #c5cbd6;
-  --hairline-dark: #2a3543;
-  --input-border: #727782;
+  /* Tipografía geométrica europea con peso moderado (Ferrari / Propuesta 2) */
+  --font-sans: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
 
-  /* Tipografía */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
-  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-
-  /* Escala tipográfica fluida (390px -> 1440px) */
-  --t-h1: clamp(2.35rem, 4.1vw + 0.9rem, 4.35rem);
-  --t-h2: clamp(1.85rem, 2.7vw + 0.7rem, 3rem);
-  --t-h3: clamp(1.2rem, 1.1vw + 0.85rem, 1.5rem);
-  --t-statement: clamp(1.55rem, 2.4vw + 0.65rem, 2.55rem);
-  --t-lead: clamp(1.0625rem, 0.45vw + 0.95rem, 1.25rem);
-  --t-body: 1rem;
-  --t-small: 0.875rem;
+  /* Escala fluida (390px -> 1440px) */
+  --t-h1: clamp(2.45rem, 4.1vw + 0.95rem, 4.35rem);
+  --t-h2: clamp(1.85rem, 2.5vw + 0.7rem, 2.95rem);
+  --t-h3: clamp(1.15rem, 0.9vw + 0.85rem, 1.45rem);
+  --t-statement: clamp(1.45rem, 2.2vw + 0.65rem, 2.5rem);
+  --t-lead: clamp(1rem, 0.4vw + 0.9rem, 1.1875rem);
+  --t-body: 0.97rem;
   --t-mono: 0.75rem;
 
-  /* Layout y contenedor */
+  /* Contenedor */
   --wrap-max: 1320px;
   --gutter: clamp(1.25rem, 4vw, 4rem);
-  --nav-h: 72px;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --nav-h: 68px;
 
-  /* Tokens de movimiento (Emil Kowalski & motion.md) */
+  /* Curvas físicas (ease-out / interruptible) */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-ui: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --dur-in: 150ms;
-  --dur-out: 120ms;
+  --dur-in: 160ms;
   --dur-press: 90ms;
-  --dur-panel: 220ms;
-  --dur-enter: 600ms;
-  --dur-photo: 600ms;
+  --dur-photo: 560ms;
 }
 
 @media (max-width: 768px) {

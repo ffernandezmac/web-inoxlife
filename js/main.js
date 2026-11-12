@@ -1,14 +1,15 @@
 import { INOXLIFE_DATA } from "../data/inoxlife.js";
+import { HelicalStaircase3D } from "./staircase3d.js";
 
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 document.addEventListener("DOMContentLoaded", () => {
   initMobileNav();
   initScrollProgressFallback();
-  initHeroSwitcher();
+  initHeroStaircase3D();
   initStatementHighlight();
-  initPeekList();
   initScrollytellingChapters();
+  initPeekList();
   initProjectsPortfolio();
   initDialogs();
   initDualPathLinks();
@@ -46,7 +47,7 @@ function initMobileNav() {
 }
 
 /* ==========================================================================
-   2. Fallback de barra de progreso superior (scroll-progress-indicator)
+   2. Barra de progreso superior (fallback si animation-timeline no aplica)
    ========================================================================== */
 function initScrollProgressFallback() {
   if (prefersReducedMotion.matches) return;
@@ -66,35 +67,51 @@ function initScrollProgressFallback() {
 }
 
 /* ==========================================================================
-   3. Selector de obra destacada en el Hero
+   3. Escalera helicoidal 3D en portada girando según bajas
    ========================================================================== */
-function initHeroSwitcher() {
-  const img = document.getElementById("hero-stage-img");
-  const code = document.getElementById("hero-stage-code");
-  const title = document.getElementById("hero-stage-title");
-  const spec = document.getElementById("hero-stage-spec");
-  const buttons = document.querySelectorAll("[data-hero-slide]");
+function initHeroStaircase3D() {
+  const canvas = document.getElementById("hero-stair-canvas");
+  const hero = document.getElementById("hero-portada");
+  if (!canvas || !hero) return;
 
-  if (!img || !buttons.length) return;
-
-  buttons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const slideId = btn.getAttribute("data-hero-slide");
-      const slide = INOXLIFE_DATA.heroSlides.find((s) => s.id === slideId);
-      if (!slide) return;
-
-      buttons.forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
-      img.src = slide.image;
-      img.alt = slide.alt;
-      if (code) code.textContent = slide.code;
-      if (title) title.textContent = slide.title;
-      if (spec) spec.textContent = slide.spec;
-    });
+  const isCompact = window.innerWidth <= 900;
+  const stair = new HelicalStaircase3D(canvas, {
+    mode: "finished",
+    steps: 20,
+    sweepAngle: Math.PI * 1.48,
+    baseAngle: -0.9,
+    scrollTurns: 1.25,
+    cameraXOffset: isCompact ? 0 : -1.55,
+    cameraYOffset: isCompact ? 0.35 : 0.15,
+    cameraDistance: isCompact ? 9.6 : 7.8,
+    scale: isCompact ? 0.88 : 1.06
   });
+
+  const updateScroll = () => {
+    const maxDocScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    const heroWeight = Math.min(1, window.scrollY / Math.max(560, hero.offsetHeight * 1.1));
+    const docWeight = window.scrollY / maxDocScroll;
+    stair.setScrollProgress(heroWeight * 0.58 + docWeight * 0.42);
+  };
+
+  window.addEventListener("scroll", updateScroll, { passive: true });
+  updateScroll();
+
+  if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+    hero.addEventListener(
+      "pointermove",
+      (e) => {
+        const nx = (e.clientX / window.innerWidth - 0.5) * 2;
+        const ny = (e.clientY / window.innerHeight - 0.5) * 2;
+        stair.setPointerTilt(nx, ny);
+      },
+      { passive: true }
+    );
+  }
 }
 
 /* ==========================================================================
-   4. Declaración iluminada palabra por palabra al hacer scroll (word-highlight)
+   4. Declaración iluminada palabra por palabra al hacer scroll
    ========================================================================== */
 function initStatementHighlight() {
   const quoteEl = document.getElementById("statement-quote");
@@ -135,7 +152,105 @@ function initStatementHighlight() {
 }
 
 /* ==========================================================================
-   5. Peek-List Interactivo ("Qué fabricamos bajo plano")
+   5. Scrollytelling Nivel 3: Capítulos fijos + Escalera CAD->Acero->Vidrio
+   ========================================================================== */
+function initScrollytellingChapters() {
+  const section = document.getElementById("del-plano-a-la-obra");
+  const canvas = document.getElementById("scrolly-stair-canvas");
+  const cards = document.querySelectorAll("[data-chapter-index]");
+  const dots = document.querySelectorAll("[data-stage-dot]");
+  const stageCaption = document.getElementById("scrolly-stage-caption");
+  const insetImg = document.getElementById("scrolly-inset-img");
+
+  if (!section || !cards.length) return;
+
+  const phaseModes = ["cad", "steel", "finished"];
+
+  const scrollyStair = canvas
+    ? new HelicalStaircase3D(canvas, {
+        mode: "cad",
+        steps: 18,
+        sweepAngle: Math.PI * 1.42,
+        baseAngle: -0.65,
+        scrollTurns: 0.9,
+        cameraXOffset: 0,
+        cameraYOffset: 0.15,
+        cameraDistance: window.innerWidth <= 640 ? 11.6 : 10.4,
+        scale: 0.96
+      })
+    : null;
+
+  const setActiveChapter = (index) => {
+    const ch = INOXLIFE_DATA.chapters[index];
+    const mode = phaseModes[index];
+    if (!ch || !mode) return;
+
+    cards.forEach((card, i) => card.classList.toggle("is-active", i === index));
+    dots.forEach((dot, i) => {
+      if (i === index) {
+        dot.setAttribute("aria-current", "step");
+      } else {
+        dot.removeAttribute("aria-current");
+      }
+    });
+
+    if (scrollyStair) scrollyStair.setMode(mode);
+    if (stageCaption) stageCaption.textContent = ch.caption;
+    if (insetImg) {
+      insetImg.src = ch.image;
+      insetImg.alt = ch.caption;
+    }
+  };
+
+  const chapterObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const idx = Number(entry.target.getAttribute("data-chapter-index"));
+          setActiveChapter(idx);
+        }
+      });
+    },
+    {
+      rootMargin: "-28% 0px -42% 0px",
+      threshold: 0.15
+    }
+  );
+
+  cards.forEach((card) => chapterObserver.observe(card));
+
+  const updateSectionRotation = () => {
+    const rect = section.getBoundingClientRect();
+    const viewH = window.innerHeight;
+    const totalScrollable = Math.max(1, rect.height - viewH * 0.45);
+    const rawProgress = (viewH * 0.45 - rect.top) / totalScrollable;
+    const clamped = Math.min(1, Math.max(0, rawProgress));
+    if (scrollyStair) {
+      scrollyStair.setScrollProgress(clamped);
+    }
+  };
+
+  window.addEventListener("scroll", updateSectionRotation, { passive: true });
+  window.addEventListener("resize", updateSectionRotation, { passive: true });
+  updateSectionRotation();
+
+  dots.forEach((dot) => {
+    dot.addEventListener("click", () => {
+      const idx = Number(dot.getAttribute("data-stage-dot"));
+      const targetCard = cards[idx];
+      if (targetCard) {
+        targetCard.scrollIntoView({
+          behavior: prefersReducedMotion.matches ? "auto" : "smooth",
+          block: "center"
+        });
+        setActiveChapter(idx);
+      }
+    });
+  });
+}
+
+/* ==========================================================================
+   6. Peek-List Interactivo ("Qué fabricamos bajo plano")
    ========================================================================== */
 function initPeekList() {
   const triggers = document.querySelectorAll("[data-peek-id]");
@@ -180,110 +295,7 @@ function initPeekList() {
 }
 
 /* ==========================================================================
-   6. Scrollytelling Nivel 3: Capítulos fijos + Atmósfera + Cota Milimetrada
-   ========================================================================== */
-function initScrollytellingChapters() {
-  const section = document.getElementById("del-plano-a-la-obra");
-  const cards = document.querySelectorAll("[data-chapter-index]");
-  const layers = document.querySelectorAll("[data-stage-layer]");
-  const dots = document.querySelectorAll("[data-stage-dot]");
-  const stageCaption = document.getElementById("scrolly-stage-caption");
-  const cadReadout = document.getElementById("cad-readout");
-  const cadFill = document.getElementById("cad-fill");
-
-  if (!section || !cards.length) return;
-
-  const setActiveChapter = (index) => {
-    const ch = INOXLIFE_DATA.chapters[index];
-    if (!ch) return;
-
-    cards.forEach((card, i) => card.classList.toggle("is-active", i === index));
-    layers.forEach((layer, i) => layer.classList.toggle("is-active", i === index));
-    dots.forEach((dot, i) => {
-      if (i === index) {
-        dot.setAttribute("aria-current", "step");
-      } else {
-        dot.removeAttribute("aria-current");
-      }
-    });
-
-    if (stageCaption) {
-      stageCaption.textContent = ch.caption;
-    }
-  };
-
-  // Observador para activar cada capítulo al pasar por el centro de lectura
-  const chapterObserver = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const idx = Number(entry.target.getAttribute("data-chapter-index"));
-          setActiveChapter(idx);
-        }
-      });
-    },
-    {
-      rootMargin: "-28% 0px -42% 0px",
-      threshold: 0.15
-    }
-  );
-
-  cards.forEach((card) => chapterObserver.observe(card));
-
-  // Observador de atmósfera (cambia body[data-atmosphere="dark"] al recorrer el bloque)
-  const atmosphereObserver = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        document.body.dataset.atmosphere = entry.isIntersecting ? "dark" : "light";
-      });
-    },
-    {
-      rootMargin: "-15% 0px -20% 0px",
-      threshold: 0.05
-    }
-  );
-
-  atmosphereObserver.observe(section);
-
-  // Regla milimetrada viva (000 mm -> 1000 mm) sincronizada con el scroll de la sección
-  const updateCadRuler = () => {
-    const rect = section.getBoundingClientRect();
-    const viewH = window.innerHeight;
-    const totalScrollable = Math.max(1, rect.height - viewH * 0.5);
-    const rawProgress = (viewH * 0.45 - rect.top) / totalScrollable;
-    const clamped = Math.min(1, Math.max(0, rawProgress));
-    const mm = Math.round(clamped * 1000);
-
-    if (cadReadout) {
-      cadReadout.textContent = `${String(mm).padStart(3, "0")} mm`;
-    }
-    if (cadFill) {
-      const isHorizontal = window.innerWidth <= 1024;
-      cadFill.style.transform = isHorizontal
-        ? `scaleX(${Math.max(0.08, clamped)})`
-        : `scaleY(${Math.max(0.08, clamped)})`;
-    }
-  };
-
-  window.addEventListener("scroll", updateCadRuler, { passive: true });
-  window.addEventListener("resize", updateCadRuler, { passive: true });
-  updateCadRuler();
-
-  // Botones indicadores del visor fijo
-  dots.forEach((dot) => {
-    dot.addEventListener("click", () => {
-      const idx = Number(dot.getAttribute("data-stage-dot"));
-      const targetCard = cards[idx];
-      if (targetCard) {
-        targetCard.scrollIntoView({ behavior: prefersReducedMotion.matches ? "auto" : "smooth", block: "center" });
-        setActiveChapter(idx);
-      }
-    });
-  });
-}
-
-/* ==========================================================================
-   7. Portfolio Filtrable de Obras Reales + Modal de Ficha + "Pedir algo similar"
+   7. Portfolio Filtrable de Obras Reales + «Pedir algo similar»
    ========================================================================== */
 function initProjectsPortfolio() {
   const grid = document.getElementById("projects-grid");
@@ -313,28 +325,26 @@ function initProjectsPortfolio() {
             width="640"
             height="400"
           >
-          <span class="project-card__badge">${project.categoryLabel}</span>
         </div>
         <div class="project-card__body">
-          <div class="project-card__meta">${project.location} · ${project.clientType}</div>
+          <div class="project-card__meta">${project.location} · ${project.categoryLabel}</div>
           <h3 class="project-card__title">${project.title}</h3>
           <p class="project-card__summary">${project.summary}</p>
-          <div class="project-card__materials">Materiales: ${project.materials}</div>
           <div class="project-card__actions">
             <button
               type="button"
-              class="btn btn--secondary"
+              class="btn btn--outline-dark"
               data-open-project="${project.id}"
               aria-label="Ver ficha técnica de ${project.title}"
             >
-              Ver ficha (${project.images.length} fotos)
+              Ver ficha (${project.images.length})
             </button>
             <button
               type="button"
-              class="action-link"
+              class="btn btn--stark"
               data-select-reference="Obra similar a: ${project.title} (${project.location})"
             >
-              Pedir algo similar <span class="btn__arrow" aria-hidden="true">→</span>
+              Pedir similar
             </button>
           </div>
         </div>
@@ -359,7 +369,7 @@ function initProjectsPortfolio() {
 }
 
 /* ==========================================================================
-   8. Diálogos nativos (<dialog>) para fichas técnicas y páginas legales
+   8. Diálogos nativos (<dialog>) para fichas de obra y textos legales
    ========================================================================== */
 function initDialogs() {
   const projectDialog = document.getElementById("project-dialog");
@@ -372,7 +382,6 @@ function initDialogs() {
   const legalDialogBody = document.getElementById("legal-dialog-body");
   const legalDialogClose = document.getElementById("legal-dialog-close");
 
-  // Delegación para abrir ficha de obra o seleccionar referencia "Pedir algo similar"
   document.addEventListener("click", (e) => {
     const openProjectBtn = e.target.closest("[data-open-project]");
     if (openProjectBtn && projectDialog) {
@@ -398,7 +407,7 @@ function initDialogs() {
         <ul style="margin:0 0 1.5rem;padding-left:1.2rem;">${scopeHtml}</ul>
         <button
           type="button"
-          class="btn btn--primary"
+          class="btn btn--primary-light"
           data-select-reference="Obra similar a: ${project.title} (${project.location})"
         >
           Solicitar presupuesto de algo similar <span class="btn__arrow" aria-hidden="true">→</span>
@@ -449,22 +458,22 @@ function openLegalModal(type, dialog, titleEl, bodyEl) {
         <p><strong>Titular del sitio web:</strong> Inoxlife S.L.</p>
         <p><strong>Domicilio social e instalaciones:</strong> Ctra. Carril de Guetara, 78 · Polígono Industrial Villa Rosa, 29010 Málaga (España).</p>
         <p><strong>Contacto directo:</strong> <a href="mailto:info@inoxlife.es">info@inoxlife.es</a> · Teléfono: 912 66 69 73.</p>
-        <p><em>Nota técnica de implantación:</em> Completar con el CIF/NIF societario y datos registrales del Registro Mercantil de Málaga antes del pase a dominio definitivo.</p>
+        <p><em>Nota de implantación:</em> Completar con el CIF/NIF societario y datos del Registro Mercantil de Málaga antes del pase a dominio definitivo.</p>
       `
     },
     privacidad: {
       title: "Política de Privacidad (RGPD)",
       html: `
         <p><strong>Responsable del tratamiento:</strong> Inoxlife S.L. (info@inoxlife.es).</p>
-        <p><strong>Finalidad:</strong> Atender las solicitudes de presupuesto a medida, consultas técnicas y revisión de planos remitidas a través del formulario de contacto.</p>
-        <p><strong>Legitimación:</strong> Aplicación de medidas precontractuales a petición del interesado (art. 6.1.b RGPD).</p>
-        <p><strong>Derechos:</strong> Acceso, rectificación, supresión y oposición escribiendo a <a href="mailto:info@inoxlife.es">info@inoxlife.es</a>.</p>
+        <p><strong>Finalidad:</strong> Atender solicitudes de presupuesto a medida, consultas técnicas y revisión de planos remitidas a través del formulario de contacto.</p>
+        <p><strong>Legitimación:</strong> Medidas precontractuales a petición del interesado (art. 6.1.b RGPD).</p>
+        <p><strong>Derechos:</strong> Acceso, rectificación, supresión y oposición en <a href="mailto:info@inoxlife.es">info@inoxlife.es</a>.</p>
       `
     },
     cookies: {
       title: "Política de Cookies",
       html: `
-        <p>Esta versión del sitio web de Inoxlife utiliza exclusivamente almacenamiento técnico necesario para el funcionamiento de la interfaz, sin cookies publicitarias ni rastreadores de terceros.</p>
+        <p>Este sitio web utiliza exclusivamente recursos técnicos necesarios para su funcionamiento y visualización, sin cookies publicitarias ni rastreadores de terceros.</p>
       `
     }
   };
@@ -476,7 +485,7 @@ function openLegalModal(type, dialog, titleEl, bodyEl) {
 }
 
 /* ==========================================================================
-   9. Conexión de tarjetas de perfil y botón "Pedir algo similar" con el formulario
+   9. Conexión con tarjetas de perfil y «Pedir algo similar»
    ========================================================================== */
 function initDualPathLinks() {
   document.querySelectorAll("[data-profile-select]").forEach((el) => {
@@ -523,10 +532,7 @@ function selectProjectReference(refText, shouldScroll = true) {
 }
 
 /* ==========================================================================
-   10. Validación accesible del formulario (modern-web-guidance: forms)
-   - Validar en blur (si fue editado)
-   - Limpiar errores en input inmediatamente
-   - En submit: bloquear si hay errores y llevar el foco al primer campo inválido
+   10. Validación accesible del formulario (blur -> input -> submit)
    ========================================================================== */
 function initQuoteForm() {
   const form = document.getElementById("presupuesto-form");
@@ -601,18 +607,14 @@ function initQuoteForm() {
     const { input, validate } = fieldObj;
     if (!input) return;
 
-    // Fase input: solo limpiar errores existentes cuando se corrige el valor
     input.addEventListener("input", () => {
       touched.add(input.id);
       if (input.getAttribute("aria-invalid") === "true") {
         const msg = validate(input.value);
-        if (!msg) {
-          showFieldState(fieldObj, "");
-        }
+        if (!msg) showFieldState(fieldObj, "");
       }
     });
 
-    // Fase blur: validar contextualmente si el campo ya fue editado
     input.addEventListener("blur", () => {
       if (touched.has(input.id) || input.value.trim().length > 0) {
         const msg = validate(input.value);
@@ -624,7 +626,6 @@ function initQuoteForm() {
   form.addEventListener("submit", (e) => {
     e.preventDefault();
 
-    // Comprobar honeypot anti-spam
     const honey = form.querySelector('input[name="website_Trap"]');
     if (honey && honey.value) return;
 
@@ -639,7 +640,7 @@ function initQuoteForm() {
 
     if (firstInvalid) {
       if (statusEl) {
-        statusEl.className = "form-status is-error";
+        statusEl.className = "form-status form-status--error";
         statusEl.textContent = "Revisa los campos marcados en rojo antes de enviar tu solicitud.";
         statusEl.hidden = false;
       }
@@ -647,7 +648,6 @@ function initQuoteForm() {
       return;
     }
 
-    // Desactivar botón tras envío válido para evitar envíos duplicados
     if (submitBtn) {
       submitBtn.disabled = true;
       submitBtn.textContent = "Solicitud preparada ✓";
@@ -678,16 +678,16 @@ function initQuoteForm() {
     );
 
     if (statusEl) {
-      statusEl.className = "form-status is-success";
+      statusEl.className = "form-status";
       statusEl.innerHTML = `
         <p style="margin:0 0 0.65rem;">
           <strong>¡Solicitud validada correctamente!</strong> Hemos preparado la ficha técnica de tu consulta para oficina técnica.
         </p>
         <div style="display:flex;flex-wrap:wrap;gap:0.65rem;align-items:center;">
-          <a class="btn btn--primary" href="mailto:info@inoxlife.es?subject=${subject}&body=${body}">
+          <a class="btn btn--primary-light" href="mailto:info@inoxlife.es?subject=${subject}&body=${body}">
             Enviar ahora a info@inoxlife.es →
           </a>
-          <button type="button" class="btn btn--secondary" id="reset-quote-btn">
+          <button type="button" class="btn btn--secondary-light" id="reset-quote-btn">
             Editar o enviar otra consulta
           </button>
         </div>

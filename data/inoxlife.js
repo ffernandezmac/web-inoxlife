@@ -45,7 +45,7 @@ export const INOXLIFE_DATA = {
     },
     {
       id: "escalera",
-      code: "REF. BLL-MLG · ARQUITECTura INTERIOR",
+      code: "REF. BLL-MLG · ARQUITECTURA INTERIOR",
       title: "Bufete López Linares · Málaga",
       spec: "AISI 304 Satinado/Espejo · Escalera helicoidal con peldaños de vidrio",
       image: "assets/img/projects/lopez-linares-1.jpg",
