@@ -1,5 +1,5 @@
 import { INOXLIFE_DATA } from "../data/inoxlife.js";
-import { HelicalStaircase3D } from "./staircase3d.js";
+import { HelicalStaircase3D, CanopyStructure3D } from "./staircase3d.js";
 
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -159,31 +159,26 @@ function initScrollytellingChapters() {
   const canvas = document.getElementById("scrolly-stair-canvas");
   const cards = document.querySelectorAll("[data-chapter-index]");
   const dots = document.querySelectorAll("[data-stage-dot]");
-  const stageCaption = document.getElementById("scrolly-stage-caption");
-  const insetImg = document.getElementById("scrolly-inset-img");
 
   if (!section || !cards.length) return;
 
   const phaseModes = ["cad", "steel", "finished"];
 
-  const scrollyStair = canvas
-    ? new HelicalStaircase3D(canvas, {
+  const scrollyModel = canvas
+    ? new CanopyStructure3D(canvas, {
         mode: "cad",
-        steps: 18,
-        sweepAngle: Math.PI * 1.42,
-        baseAngle: -0.65,
-        scrollTurns: 0.9,
+        baseAngle: -0.62,
+        scrollTurns: 0.72,
         cameraXOffset: 0,
-        cameraYOffset: 0.15,
-        cameraDistance: window.innerWidth <= 640 ? 11.6 : 10.4,
-        scale: 0.96
+        cameraYOffset: 0.52,
+        cameraDistance: window.innerWidth <= 640 ? 10.6 : 8.7,
+        scale: window.innerWidth <= 640 ? 0.78 : 0.96
       })
     : null;
 
   const setActiveChapter = (index) => {
-    const ch = INOXLIFE_DATA.chapters[index];
     const mode = phaseModes[index];
-    if (!ch || !mode) return;
+    if (!mode) return;
 
     cards.forEach((card, i) => card.classList.toggle("is-active", i === index));
     dots.forEach((dot, i) => {
@@ -194,12 +189,7 @@ function initScrollytellingChapters() {
       }
     });
 
-    if (scrollyStair) scrollyStair.setMode(mode);
-    if (stageCaption) stageCaption.textContent = ch.caption;
-    if (insetImg) {
-      insetImg.src = ch.image;
-      insetImg.alt = ch.caption;
-    }
+    if (scrollyModel) scrollyModel.setMode(mode);
   };
 
   const chapterObserver = new IntersectionObserver(
@@ -225,8 +215,8 @@ function initScrollytellingChapters() {
     const totalScrollable = Math.max(1, rect.height - viewH * 0.45);
     const rawProgress = (viewH * 0.45 - rect.top) / totalScrollable;
     const clamped = Math.min(1, Math.max(0, rawProgress));
-    if (scrollyStair) {
-      scrollyStair.setScrollProgress(clamped);
+    if (scrollyModel) {
+      scrollyModel.setScrollProgress(clamped);
     }
   };
 

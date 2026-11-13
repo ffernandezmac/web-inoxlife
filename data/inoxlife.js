@@ -14,7 +14,7 @@ export const INOXLIFE_DATA = {
     email: "info@inoxlife.es",
     address: "Ctra. Carril de Guetara, 78 · Pol. Ind. Villa Rosa",
     city: "29010 Málaga, España",
-    coverage: "Málaga, Costa del Sol, Gibraltar, Península y Baleares",
+    coverage: "Gibraltar y Costa del Sol",
     responsePromise: "Respuesta técnica en 24–48 h laborables",
     heritage:
       "Convertida en S.L., nace como heredera de la que fue durante décadas la fábrica malagueña de estructuras metálicas, integrando oficina técnica de Ingeniería, Arquitectura y Diseño con taller propio.",
@@ -157,8 +157,8 @@ export const INOXLIFE_DATA = {
         "Ajuste final en destino de vidrios templados/laminados, pasamanos continuos y sellados.",
         "Capacidad para abordar desde una escalera única en una villa hasta grandes desarrollos junto a NAVACEL."
       ],
-      metricLabel: "Cobertura habitual",
-      metricValue: "Andalucía · Gibraltar · Nacional",
+      metricLabel: "Zona de actuación",
+      metricValue: "Gibraltar y Costa del Sol",
       image: "assets/img/projects/crowne-plaza-2.jpg",
       caption: "Fase 03 · Entrega e instalación final en Hotel Crowne Plaza Estepona"
     }
@@ -352,9 +352,9 @@ export const INOXLIFE_DATA = {
         "Porque cada escalera, marquesina, barandilla o piscina cambia según las dimensiones del hueco, el tipo de anclaje, el espesor del vidrio y la aleación necesaria (AISI 304 para interior o AISI 316L marino para costa). Así solo pagas por la solución exacta que requiere tu proyecto."
     },
     {
-      question: "¿Trabajáis solo en Málaga o os desplazáis a otras provincias?",
+      question: "¿En qué zona trabajáis habitualmente?",
       answer:
-        "Nuestra fábrica y taller están en el Polígono Industrial Villa Rosa (Málaga), con actuación continua en toda la Costa del Sol (Marbella, Estepona, Benalmádena), Gibraltar, resto de Andalucía, Madrid e islas (como Ibiza) según la envergadura del proyecto."
+        "Nuestra fábrica y taller están en el Polígono Industrial Villa Rosa (Málaga), con actuación en toda la Costa del Sol (Marbella, Estepona, Benalmádena) y Gibraltar."
     },
     {
       question: "¿Fabricáis e instaláis vosotros mismos?",
